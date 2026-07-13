@@ -1,0 +1,36 @@
+Я бы сделал
+
+memory/
+
+Например
+
+memory/
+
+    amazon.md
+
+    indeed.md
+
+    linkedin.md
+
+    cloudflare.md
+
+    wordpress.md
+
+    shopify.md
+
+Например
+
+shopify.md
+Shopify
+
+Лучше использовать API
+
+BeautifulSoup плохо подходит
+
+Обычно нужен Playwright
+
+Есть GraphQL
+
+...
+
+Через год это будет золотая база знаний.

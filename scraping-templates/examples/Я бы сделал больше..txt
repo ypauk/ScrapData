@@ -1,0 +1,25 @@
+examples/
+
+    login/
+
+    api/
+
+    bs4/
+
+    playwright/
+
+    ecommerce/
+
+    jobs/
+
+    maps/
+
+    youtube/
+
+    tables/
+
+    pdf/
+
+    images/
+
+    cloudflare/

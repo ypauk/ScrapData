@@ -1,0 +1,5950 @@
+====================================================================================================
+ПОВНИЙ ДАМП ПРОЕКТУ
+2026-07-12 13:35:34
+====================================================================================================
+
+СТРУКТУРА ПРОЕКТУ
+----------------------------------------------------------------------------------------------------
+
+📁 UPWORK-ALL/
+├── 📁 memory/
+│   └── 📄 9. Самая важная папка.txt
+├── 📁 scraping-templates/
+│   ├── 📁 examples/
+│   │   ├── 📁 amazon/
+│   │   ├── 📁 login_site/
+│   │   ├── 📁 news_site/
+│   │   └── 📄 Я бы сделал больше..txt
+│   ├── 📁 knowledge/
+│   │   ├── 📄 api.md
+│   │   ├── 📄 bs4.md
+│   │   ├── 📄 cloudflare.md
+│   │   ├── 📄 docker.md
+│   │   ├── 📄 playwright.md
+│   │   ├── 📄 scrapy.md
+│   │   ├── 📄 selenium.md
+│   │   └── 📄 ИИ можно сразу скормить этот файл..txt
+│   ├── 📁 prompts/
+│   │   ├── 📄 01_analyze_project.md
+│   │   ├── 📄 02_generate_project.md
+│   │   ├── 📄 03_generate_module.md
+│   │   ├── 📄 04_debug.md
+│   │   ├── 📄 05_refactor.md
+│   │   ├── 📄 06_review.md
+│   │   ├── 📄 07_optimize.md
+│   │   ├── 📄 08_create_tests.md
+│   │   └── 📄 09_create_docker.md
+│   ├── 📁 scripts/
+│   │   └── 📁 tools/
+│   │       ├── 📄 create_project.py
+│   │       ├── 📄 dump_full_project.py
+│   │       ├── 📄 dump_structure.py
+│   │       └── 📄 prepare_for_ai.py
+│   ├── 📁 snippets/
+│   │   └── 📄 Туда можно складывать маленькие куски.txt
+│   ├── 📁 templates/
+│   │   ├── 📁 api/
+│   │   ├── 📁 beautifulsoup/
+│   │   ├── 📁 docker/
+│   │   │   └── 📄 Dockerfile
+│   │   ├── 📁 infinite_scroll/
+│   │   ├── 📁 login/
+│   │   ├── 📁 pagination/
+│   │   ├── 📁 playwright/
+│   │   ├── 📁 project/
+│   │   └── 📁 scrapy/
+│   └── 📄 AI_rules.md
+├── 📁 starter-project/
+│   ├── 📁 AI_INPUT/
+│   │   ├── 📁 screenshots/
+│   │   ├── 📄 answers.txt
+│   │   ├── 📄 cookies.json
+│   │   ├── 📄 description.txt
+│   │   ├── 📄 headers.json
+│   │   ├── 📄 network.har
+│   │   └── 📄 page.html
+│   ├── 📁 AI_OUTPUT/
+│   │   ├── 📄 analysis.md
+│   │   ├── 📄 analysis_response.md
+│   │   ├── 📄 final_prompt.md
+│   │   ├── 📄 final_prompt_for_ai.md
+│   │   ├── 📄 project_plan.md
+│   │   └── 📄 Я бы сделал еще одну папку.txt
+│   ├── 📁 app/
+│   │   ├── 📄 browser.py
+│   │   ├── 📄 config.py
+│   │   ├── 📄 exporter.py
+│   │   ├── 📄 main.py
+│   │   ├── 📄 parser.py
+│   │   ├── 📄 scraper.py
+│   │   └── 📄 utils.py
+│   ├── 📁 docs/
+│   │   └── 📄 здесь пилим документацию.txt
+│   ├── 📁 input/
+│   ├── 📁 output/
+│   │   ├── 📄 output_results.csv
+│   │   └── 📄 output_results.json
+│   ├── 📁 tests/
+│   ├── 📁 workflows/
+│   │   ├── 📄 new_project.md
+│   │   └── 📄 Вот чего сейчас не хватает..txt
+│   ├── 📄 .env
+│   ├── 📄 docker-compose.yml
+│   ├── 📄 Dockerfile
+│   ├── 📄 PROJECT_STRUCTURE.md
+│   ├── 📄 README.md
+│   ├── 📄 requirements.txt
+│   └── 📄 Как добиться не писать лишний код.txt
+├── 📄 ai_workflow.py
+├── 📄 check-list.txt
+├── 📄 export_for_ai.py
+├── 📄 Единый формат передачи задачи ИИ.txt
+└── 📄 САМОЕ ГЛАВНОЕ.txt
+
+====================================================================================================
+ВМІСТ ФАЙЛІВ
+====================================================================================================
+
+====================================================================================================
+ФАЙЛ: ai_workflow.py
+====================================================================================================
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Единый инструмент для Upwork scraping-проектов.
+
+Использование:
+    python ai_workflow.py new <project_name>
+    python ai_workflow.py analyze [project_name]
+    python ai_workflow.py project [project_name]
+    python ai_workflow.py module scraper [project_name]
+    python ai_workflow.py module parser [project_name]
+    python ai_workflow.py debug [project_name]
+    python ai_workflow.py docker [project_name]
+
+Если project_name не указан — берётся текущая папка (если это проект).
+"""
+
+from __future__ import annotations
+
+import argparse
+import re
+import shutil
+import sys
+from pathlib import Path
+from typing import Optional
+
+try:
+    from bs4 import BeautifulSoup
+except ImportError:
+    BeautifulSoup = None  # type: ignore
+
+
+# ---------------------------------------------------------------------------
+# Пути
+# ---------------------------------------------------------------------------
+
+WORKSPACE_ROOT = Path(__file__).resolve().parent
+TEMPLATES_DIR = WORKSPACE_ROOT / "scraping-templates"
+PROMPTS_DIR = TEMPLATES_DIR / "prompts"
+AI_RULES_FILE = TEMPLATES_DIR / "AI_rules.md"
+PROJECT_TEMPLATE = WORKSPACE_ROOT / "starter-project"
+
+OUTPUT_PROMPT = "final_prompt.md"
+
+STAGES = {
+    "analyze": "01_analyze_project.md",
+    "project": "02_generate_project.md",
+    "module": "03_generate_module.md",
+    "debug": "04_debug.md",
+    "docker": "09_create_docker.md",
+}
+
+CORE_FILES = [
+    "app/main.py",
+    "app/browser.py",
+    "app/config.py",
+    "app/exporter.py",
+    "app/utils.py",
+]
+
+MODULE_FILES = {
+    "scraper": "app/scraper.py",
+    "parser": "app/parser.py",
+}
+
+COPY_SKIP_DIRS = {
+    ".git", ".idea", ".vscode", "__pycache__", ".pytest_cache",
+    ".mypy_cache", ".ruff_cache", ".venv", "venv", "env",
+    "node_modules", "dist", "build", "logs",
+}
+
+COPY_SKIP_FILES = {
+    "output_results.csv",
+    "output_results.json",
+    OUTPUT_PROMPT,
+    "final_prompt_for_ai.md",
+    "analysis.md",
+    "project_plan.md",
+}
+
+
+# ---------------------------------------------------------------------------
+# Утилиты
+# ---------------------------------------------------------------------------
+
+def die(message: str, code: int = 1) -> None:
+    print(f"[ERROR] {message}")
+    sys.exit(code)
+
+
+def ok(message: str) -> None:
+    print(f"[OK] {message}")
+
+
+def info(message: str) -> None:
+    print(f"[INFO] {message}")
+
+
+def is_project_dir(path: Path) -> bool:
+    return (path / "app" / "main.py").exists() and (path / "AI_INPUT").is_dir()
+
+
+def find_project(name: Optional[str]) -> Path:
+    if name:
+        project = WORKSPACE_ROOT / name
+        if not is_project_dir(project):
+            die(f"Проект не найден: {project}")
+        return project
+
+    cwd = Path.cwd().resolve()
+    if is_project_dir(cwd):
+        return cwd
+
+    die(
+        "Не удалось определить проект.\n"
+        "   Запусти из папки проекта или укажи имя:\n"
+        "   python ai_workflow.py analyze amazon_scraper"
+    )
+
+
+def validate_project_name(name: str) -> str:
+    if not re.fullmatch(r"[a-zA-Z][a-zA-Z0-9_-]*", name):
+        die("Имя проекта: только латиница, цифры, _ и -. Начинаться с буквы.")
+    if name == "starter-project":
+        die("Нельзя использовать имя starter-project — это шаблон.")
+    return name
+
+
+def read_text(path: Path, default: str = "") -> str:
+    if not path.exists():
+        return default
+    return path.read_text(encoding="utf-8", errors="replace")
+
+
+def write_text(path: Path, content: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content, encoding="utf-8")
+
+
+def load_template(stage: str) -> str:
+    filename = STAGES.get(stage)
+    if not filename:
+        die(f"Неизвестный этап: {stage}")
+    path = PROMPTS_DIR / filename
+    if not path.exists():
+        die(f"Шаблон промпта не найден: {path}")
+    return read_text(path)
+
+
+def fill_template(template: str, mapping: dict[str, str]) -> str:
+    result = template
+    for key, value in mapping.items():
+        result = result.replace(f"{{{{{key}}}}}", value)
+    return result
+
+
+def simplify_html(file_path: Path) -> str:
+    if BeautifulSoup is None:
+        return f"\n\n--- HTML: {file_path.name} ---\n{read_text(file_path)}"
+
+    try:
+        soup = BeautifulSoup(read_text(file_path), "html.parser")
+        for tag in soup(["script", "style", "noscript", "svg", "meta", "link", "footer", "nav", "iframe"]):
+            tag.decompose()
+
+        allowed_attrs = {"class", "id", "data-test-id", "href", "src", "name"}
+        for tag in soup.find_all(True):
+            for attr in list(tag.attrs):
+                if attr not in allowed_attrs:
+                    del tag[attr]
+
+        return f"\n\n--- СЖАТЫЙ HTML: {file_path.name} ---\n{soup.prettify()}"
+    except Exception as exc:
+        return f"\n\n--- ОШИБКА HTML {file_path.name}: {exc} ---\n"
+
+
+def collect_ai_input(project: Path, include_html: bool = True) -> str:
+    input_dir = project / "AI_INPUT"
+    if not input_dir.exists():
+        return "(AI_INPUT пуст или не существует)"
+
+    extensions = {".txt", ".html", ".md", ".json", ".har"}
+    files = sorted(
+        [f for f in input_dir.iterdir() if f.is_file() and f.suffix in extensions],
+        key=lambda x: (x.name != "description.txt", x.name),
+    )
+
+    parts: list[str] = []
+    for file_path in files:
+        if file_path.suffix == ".html" and include_html:
+            parts.append(simplify_html(file_path))
+        else:
+            parts.append(f"\n\n--- ФАЙЛ: {file_path.name} ---\n{read_text(file_path)}")
+
+    return "".join(parts) if parts else "(файлы в AI_INPUT не найдены)"
+
+
+def collect_core_files(project: Path) -> str:
+    parts: list[str] = []
+    for rel in CORE_FILES:
+        path = project / rel
+        parts.append(f"\n\n--- {rel} (НЕ МЕНЯТЬ) ---\n{read_text(path, '(файл не найден)')}")
+    return "".join(parts)
+
+
+def collect_app_code(project: Path) -> str:
+    app_dir = project / "app"
+    if not app_dir.exists():
+        return "(папка app не найдена)"
+
+    parts: list[str] = []
+    for path in sorted(app_dir.glob("*.py")):
+        rel = path.relative_to(project).as_posix()
+        parts.append(f"\n\n--- {rel} ---\n{read_text(path)}")
+    return "".join(parts)
+
+
+def collect_debug_context(project: Path) -> str:
+    candidates = [
+        project / "AI_OUTPUT" / "traceback.txt",
+        project / "logs" / "last_error.txt",
+        project / "traceback.txt",
+    ]
+    for path in candidates:
+        if path.exists() and path.stat().st_size > 0:
+            return f"\n\n--- {path.name} ---\n{read_text(path)}"
+    return "(traceback не найден — сохрани ошибку в AI_OUTPUT/traceback.txt)"
+
+
+def save_prompt(project: Path, content: str) -> Path:
+    out = project / "AI_OUTPUT" / OUTPUT_PROMPT
+    write_text(out, content)
+    return out
+
+
+def next_step_hint(stage: str, project: Path) -> None:
+    hints = {
+        "analyze": (
+            f"1. Открой: {project / 'AI_OUTPUT' / OUTPUT_PROMPT}\n"
+            f"2. Отправь в ChatGPT\n"
+            f"3. Сохрани ответ в: {project / 'AI_OUTPUT' / 'analysis.md'}"
+        ),
+        "project": (
+            f"1. Открой: {project / 'AI_OUTPUT' / OUTPUT_PROMPT}\n"
+            f"2. Отправь в ChatGPT\n"
+            f"3. Сохрани ответ в: {project / 'AI_OUTPUT' / 'project_plan.md'}"
+        ),
+        "module": (
+            f"1. Открой: {project / 'AI_OUTPUT' / OUTPUT_PROMPT}\n"
+            f"2. Отправь в ChatGPT\n"
+            f"3. Скопируй код в соответствующий файл в app/"
+        ),
+        "debug": (
+            f"1. Открой: {project / 'AI_OUTPUT' / OUTPUT_PROMPT}\n"
+            f"2. Отправь в ChatGPT\n"
+            f"3. Примени исправления и перезапусти main.py"
+        ),
+        "docker": (
+            f"1. Открой: {project / 'AI_OUTPUT' / OUTPUT_PROMPT}\n"
+            f"2. Отправь в ChatGPT\n"
+            f"3. Сохрани Dockerfile и docker-compose.yml в корень проекта"
+        ),
+    }
+    print()
+    info("Следующий шаг:")
+    print(hints.get(stage, ""))
+
+
+# ---------------------------------------------------------------------------
+# Команды
+# ---------------------------------------------------------------------------
+
+def cmd_new(name: str) -> None:
+    name = validate_project_name(name)
+    dest = WORKSPACE_ROOT / name
+
+    if dest.exists():
+        die(f"Проект уже существует: {dest}")
+
+    if not PROJECT_TEMPLATE.exists():
+        die(f"Шаблон не найден: {PROJECT_TEMPLATE}")
+
+    info(f"Создаю проект: {dest}")
+
+    def ignore(dir_path: str, names: list[str]) -> list[str]:
+        ignored = []
+        for n in names:
+            if n in COPY_SKIP_DIRS:
+                ignored.append(n)
+            elif n in COPY_SKIP_FILES:
+                ignored.append(n)
+        return ignored
+
+    shutil.copytree(PROJECT_TEMPLATE, dest, ignore=ignore)
+
+    # Очистка артефактов шаблона
+    for folder in ("output", "AI_OUTPUT"):
+        target = dest / folder
+        if target.exists():
+            for f in target.iterdir():
+                if f.is_file() and f.name not in {".gitkeep"}:
+                    f.unlink()
+
+    # Пустые шаблоны AI_INPUT
+    write_text(dest / "AI_INPUT" / "description.txt", "# Описание задачи клиента\n\nURL:\n\nПоля для извлечения:\n\n")
+    write_text(dest / "AI_INPUT" / "answers.txt", "")
+    write_text(dest / "AI_INPUT" / "cookies.json", "[]\n")
+    write_text(dest / "AI_INPUT" / "headers.json", "{}\n")
+
+    # README проекта
+    readme = f"""# {name}
+
+## Быстрый старт
+
+```bash
+# 1. Заполни AI_INPUT/ (description.txt, page.html, network.har...)
+python ../ai_workflow.py analyze {name}
+
+# 2. Сохрани ответ ИИ в AI_OUTPUT/analysis.md
+python ../ai_workflow.py project {name}
+
+# 3. Сохрани ответ в AI_OUTPUT/project_plan.md
+python ../ai_workflow.py module scraper {name}
+python ../ai_workflow.py module parser {name}
+
+# 4. Запуск
+cd {name}
+python -m app.main
+```
+
+## Структура
+
+- `AI_INPUT/` — данные от клиента
+- `AI_OUTPUT/` — промпты и ответы ИИ
+- `app/` — код парсера
+- `output/` — результаты CSV/JSON
+"""
+    write_text(dest / "README.md", readme)
+
+    # Dockerfile-заготовка
+    if not (dest / "Dockerfile").exists():
+        write_text(dest / "Dockerfile", read_text(TEMPLATES_DIR / "templates" / "docker" / "Dockerfile", ""))
+
+    ok(f"Проект создан: {dest}")
+    print()
+    info("Дальше:")
+    print(f"   1. Заполни {dest / 'AI_INPUT' / 'description.txt'}")
+    print(f"   2. python ai_workflow.py analyze {name}")
+
+
+def cmd_analyze(project: Path) -> None:
+    template = load_template("analyze")
+    prompt = fill_template(template, {
+        "CLIENT_DESCRIPTION": collect_ai_input(project),
+    })
+    out = save_prompt(project, prompt)
+    ok(f"Промпт анализа: {out}")
+    next_step_hint("analyze", project)
+
+
+def cmd_project(project: Path) -> None:
+    analysis = project / "AI_OUTPUT" / "analysis.md"
+    if not analysis.exists():
+        die(f"Сначала сохрани ответ ИИ в {analysis}")
+
+    template = load_template("project")
+    prompt = fill_template(template, {
+        "CLIENT_DESCRIPTION": read_text(project / "AI_INPUT" / "description.txt"),
+        "APPROVED_STRATEGY": read_text(analysis),
+        "AI_INPUT_ANALYSIS": collect_ai_input(project),
+    })
+    out = save_prompt(project, prompt)
+    ok(f"Промпт проектирования: {out}")
+    next_step_hint("project", project)
+
+
+def cmd_module(project: Path, module_name: str) -> None:
+    module_name = module_name.lower()
+    if module_name not in MODULE_FILES:
+        die(f"Модуль должен быть: scraper или parser. Получено: {module_name}")
+
+    plan = project / "AI_OUTPUT" / "project_plan.md"
+    analysis = project / "AI_OUTPUT" / "analysis.md"
+    if not plan.exists():
+        die(f"Сначала сохрани план в {plan}")
+    if not analysis.exists():
+        die(f"Сначала сохрани анализ в {analysis}")
+
+    rel_path = MODULE_FILES[module_name]
+    template = load_template("module")
+    prompt = fill_template(template, {
+        "MODULE_NAME": module_name,
+        "MODULE_FILE": rel_path,
+        "PROJECT_PLAN": read_text(plan),
+        "ANALYSIS": read_text(analysis),
+        "MODULE_TEMPLATE": read_text(project / rel_path),
+        "CORE_FILES": collect_core_files(project),
+        "AI_RULES": read_text(AI_RULES_FILE),
+        "AI_INPUT": collect_ai_input(project, include_html=False),
+    })
+    out = save_prompt(project, prompt)
+    ok(f"Промпт генерации {module_name}: {out}")
+    next_step_hint("module", project)
+
+
+def cmd_debug(project: Path) -> None:
+    template = load_template("debug")
+    prompt = fill_template(template, {
+        "PROJECT_PLAN": read_text(project / "AI_OUTPUT" / "project_plan.md", "(нет project_plan.md)"),
+        "ANALYSIS": read_text(project / "AI_OUTPUT" / "analysis.md", "(нет analysis.md)"),
+        "CURRENT_CODE": collect_app_code(project),
+        "ERROR_LOG": collect_debug_context(project),
+        "AI_RULES": read_text(AI_RULES_FILE),
+    })
+    out = save_prompt(project, prompt)
+    ok(f"Промпт отладки: {out}")
+    next_step_hint("debug", project)
+
+
+def cmd_docker(project: Path) -> None:
+    template = load_template("docker")
+    prompt = fill_template(template, {
+        "PROJECT_NAME": project.name,
+        "ANALYSIS": read_text(project / "AI_OUTPUT" / "analysis.md", "(нет analysis.md)"),
+        "PROJECT_CODE": collect_app_code(project),
+        "REQUIREMENTS": read_text(project / "requirements.txt"),
+        "AI_RULES": read_text(AI_RULES_FILE),
+    })
+    out = save_prompt(project, prompt)
+    ok(f"Промпт Docker: {out}")
+    next_step_hint("docker", project)
+
+
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Единый workflow для Upwork scraping-проектов",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Примеры:
+  python ai_workflow.py new amazon_scraper
+  python ai_workflow.py analyze amazon_scraper
+  python ai_workflow.py project amazon_scraper
+  python ai_workflow.py module scraper amazon_scraper
+  python ai_workflow.py module parser amazon_scraper
+  python ai_workflow.py debug amazon_scraper
+  python ai_workflow.py docker amazon_scraper
+        """,
+    )
+    parser.add_argument(
+        "command",
+        choices=["new", "analyze", "project", "module", "debug", "docker"],
+        help="Этап workflow",
+    )
+    parser.add_argument(
+        "args",
+        nargs="*",
+        help="Для new: имя проекта. Для module: scraper|parser. Опционально: имя проекта.",
+    )
+    return parser
+
+
+def parse_args(raw_args: list[str]) -> tuple[str, Optional[str], Optional[str]]:
+    """
+    Разбирает аргументы:
+      new <name>
+      module <scraper|parser> [project]
+      <command> [project]
+    """
+    if not raw_args:
+        die("Укажи команду. Пример: python ai_workflow.py analyze")
+
+    command = raw_args[0]
+    rest = raw_args[1:]
+
+    if command == "new":
+        if not rest:
+            die("Укажи имя проекта: python ai_workflow.py new amazon_scraper")
+        return command, rest[0], None
+
+    if command == "module":
+        if not rest:
+            die("Укажи модуль: python ai_workflow.py module scraper")
+        module_name = rest[0]
+        project_name = rest[1] if len(rest) > 1 else None
+        return command, project_name, module_name
+
+    project_name = rest[0] if rest else None
+    return command, project_name, None
+
+
+def main() -> None:
+    command, project_name, module_name = parse_args(sys.argv[1:])
+
+    if command == "new":
+        cmd_new(project_name)  # type: ignore[arg-type]
+        return
+
+    project = find_project(project_name)
+
+    dispatch = {
+        "analyze": lambda: cmd_analyze(project),
+        "project": lambda: cmd_project(project),
+        "module": lambda: cmd_module(project, module_name),  # type: ignore[arg-type]
+        "debug": lambda: cmd_debug(project),
+        "docker": lambda: cmd_docker(project),
+    }
+
+    dispatch[command]()
+
+
+if __name__ == "__main__":
+    main()
+
+====================================================================================================
+ФАЙЛ: check-list.txt
+====================================================================================================
+
+Перед каждым проектом отвечать.
+
+HTML?
+или API?
+или Playwright?
+Есть логин?
+Есть Cloudflare?
+Есть CAPTCHA?
+Есть JavaScript?
+Нужно скачивать файлы?
+Нужно загружать данные?
+Есть бесконечный скролл?
+Есть пагинация?
+
+====================================================================================================
+ФАЙЛ: export_for_ai.py
+====================================================================================================
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+Створює повний дамп структури проекту.
+
+✔ Записує ВСІ папки та підпапки.
+✔ Записує ВСІ файли (крім виключених директорій).
+✔ Записує повний вміст кожного файлу.
+✔ Малює красиве дерево проекту.
+✔ Працює з будь-якою глибиною вкладеності.
+"""
+
+from pathlib import Path
+from datetime import datetime
+
+# ---------------------------------------------------------------------
+# Налаштування
+# ---------------------------------------------------------------------
+
+ROOT_DIR = Path(__file__).parent.resolve()
+
+OUTPUT_FILE = ROOT_DIR / "my_project_structure.txt"
+
+EXCLUDE_DIRS = {
+    ".git",
+    ".idea",
+    ".vscode",
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".venv",
+    "venv",
+    "env",
+    "node_modules",
+    "dist",
+    "build",
+    "logs",
+}
+
+EXCLUDE_FILES = {
+    OUTPUT_FILE.name,
+}
+
+# ---------------------------------------------------------------------
+
+
+def should_skip(path: Path) -> bool:
+    """
+    Перевіряє чи потрібно пропустити файл або папку.
+    """
+    for part in path.relative_to(ROOT_DIR).parts:
+        if part in EXCLUDE_DIRS:
+            return True
+
+    if path.is_file() and path.name in EXCLUDE_FILES:
+        return True
+
+    return False
+
+
+# ---------------------------------------------------------------------
+
+
+def get_all_files():
+    """
+    Повертає список всіх файлів проекту.
+    """
+    files = []
+
+    for path in ROOT_DIR.rglob("*"):
+
+        if should_skip(path):
+            continue
+
+        if path.is_file():
+            files.append(path)
+
+    return sorted(files)
+
+
+# ---------------------------------------------------------------------
+
+
+def write_tree(directory: Path, out, prefix=""):
+    """
+    Малює дерево директорій.
+    """
+
+    items = []
+
+    for item in directory.iterdir():
+
+        if should_skip(item):
+            continue
+
+        items.append(item)
+
+    items.sort(key=lambda p: (p.is_file(), p.name.lower()))
+
+    count = len(items)
+
+    for index, item in enumerate(items):
+
+        last = index == count - 1
+
+        connector = "└── " if last else "├── "
+
+        if item.is_dir():
+
+            out.write(f"{prefix}{connector}📁 {item.name}/\n")
+
+            extension = "    " if last else "│   "
+
+            write_tree(item, out, prefix + extension)
+
+        else:
+
+            out.write(f"{prefix}{connector}📄 {item.name}\n")
+
+
+# ---------------------------------------------------------------------
+
+
+def dump_project():
+
+    print("=" * 70)
+    print("Створення дампу проекту...")
+    print(ROOT_DIR)
+    print("=" * 70)
+
+    files = get_all_files()
+
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as out:
+
+        # --------------------------------------------------------------
+
+        out.write("=" * 100 + "\n")
+        out.write("ПОВНИЙ ДАМП ПРОЕКТУ\n")
+        out.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\n")
+        out.write("=" * 100 + "\n\n")
+
+        # --------------------------------------------------------------
+
+        out.write("СТРУКТУРА ПРОЕКТУ\n")
+        out.write("-" * 100 + "\n\n")
+
+        out.write(f"📁 {ROOT_DIR.name}/\n")
+        write_tree(ROOT_DIR, out)
+
+        # --------------------------------------------------------------
+
+        out.write("\n")
+        out.write("=" * 100 + "\n")
+        out.write("ВМІСТ ФАЙЛІВ\n")
+        out.write("=" * 100 + "\n")
+
+        for file in files:
+
+            rel = file.relative_to(ROOT_DIR)
+
+            out.write("\n")
+            out.write("=" * 100 + "\n")
+            out.write(f"ФАЙЛ: {rel}\n")
+            out.write("=" * 100 + "\n\n")
+
+            try:
+
+                content = file.read_text(
+                    encoding="utf-8",
+                    errors="replace"
+                )
+
+                out.write(content)
+
+                if not content.endswith("\n"):
+                    out.write("\n")
+
+            except Exception as e:
+
+                out.write(f"[ПОМИЛКА ЧИТАННЯ: {e}]\n")
+
+        # --------------------------------------------------------------
+
+        out.write("\n")
+        out.write("=" * 100 + "\n")
+        out.write("СТАТИСТИКА\n")
+        out.write("=" * 100 + "\n")
+
+        out.write(f"Всього файлів : {len(files)}\n")
+
+        extensions = {}
+
+        for file in files:
+            ext = file.suffix if file.suffix else "<без розширення>"
+            extensions[ext] = extensions.get(ext, 0) + 1
+
+        out.write("\nЗа типами:\n")
+
+        for ext in sorted(extensions):
+            out.write(f"  {ext:<20} {extensions[ext]}\n")
+
+    print()
+    print("✅ Готово!")
+    print(f"Файл: {OUTPUT_FILE}")
+    print(f"Файлів: {len(files)}")
+    print(f"Розмір: {OUTPUT_FILE.stat().st_size / 1024:.1f} KB")
+
+
+# ---------------------------------------------------------------------
+
+if __name__ == "__main__":
+    dump_project()
+
+====================================================================================================
+ФАЙЛ: memory\9. Самая важная папка.txt
+====================================================================================================
+
+Я бы сделал
+
+memory/
+
+Например
+
+memory/
+
+    amazon.md
+
+    indeed.md
+
+    linkedin.md
+
+    cloudflare.md
+
+    wordpress.md
+
+    shopify.md
+
+Например
+
+shopify.md
+Shopify
+
+Лучше использовать API
+
+BeautifulSoup плохо подходит
+
+Обычно нужен Playwright
+
+Есть GraphQL
+
+...
+
+Через год это будет золотая база знаний.
+
+====================================================================================================
+ФАЙЛ: scraping-templates\AI_rules.md
+====================================================================================================
+
+ПРАВИЛА РАЗРАБОТКИ
+
+1. Всегда использовать starter-project.
+
+2. Не менять структуру каталогов.
+
+3. Не создавать новые папки без необходимости.
+
+4. Не писать код, который не требуется клиентом.
+
+5. Предпочитать простое решение сложному.
+
+6. Сначала искать API.
+
+7. Если API нет — рассматривать requests + BeautifulSoup.
+
+8. Playwright использовать только при необходимости.
+
+9. Код должен быть модульным.
+
+10. Docker создавать только после успешного локального запуска.
+
+====================================================================================================
+ФАЙЛ: scraping-templates\examples\Я бы сделал больше..txt
+====================================================================================================
+
+examples/
+
+    login/
+
+    api/
+
+    bs4/
+
+    playwright/
+
+    ecommerce/
+
+    jobs/
+
+    maps/
+
+    youtube/
+
+    tables/
+
+    pdf/
+
+    images/
+
+    cloudflare/
+
+====================================================================================================
+ФАЙЛ: scraping-templates\knowledge\api.md
+====================================================================================================
+
+
+
+====================================================================================================
+ФАЙЛ: scraping-templates\knowledge\bs4.md
+====================================================================================================
+
+
+
+====================================================================================================
+ФАЙЛ: scraping-templates\knowledge\cloudflare.md
+====================================================================================================
+
+
+
+====================================================================================================
+ФАЙЛ: scraping-templates\knowledge\docker.md
+====================================================================================================
+
+
+
+====================================================================================================
+ФАЙЛ: scraping-templates\knowledge\playwright.md
+====================================================================================================
+
+Когда использовать
+
+Когда НЕ использовать
+
+Типичные ошибки
+
+Лучшие практики
+
+Как запускать
+
+Как дебажить
+
+====================================================================================================
+ФАЙЛ: scraping-templates\knowledge\scrapy.md
+====================================================================================================
+
+
+
+====================================================================================================
+ФАЙЛ: scraping-templates\knowledge\selenium.md
+====================================================================================================
+
+
+
+====================================================================================================
+ФАЙЛ: scraping-templates\knowledge\ИИ можно сразу скормить этот файл..txt
+====================================================================================================
+
+
+
+====================================================================================================
+ФАЙЛ: scraping-templates\prompts\01_analyze_project.md
+====================================================================================================
+
+# ROLE
+
+Главная цель — выбрать самое простое, надежное и быстрое решение, полностью соответствующее требованиям клиента.
+
+Не усложняй проект без необходимости.
+
+Ты опытный Python Web Scraping Engineer с большим опытом выполнения проектов на Upwork.
+
+Твоя задача — сначала полностью проанализировать проект клиента и выбрать оптимальную стратегию разработки.
+
+На этом этапе ЗАПРЕЩЕНО писать код.
+Если тебе не хватает информации — сначала задай вопросы.
+
+---
+
+# PROJECT DESCRIPTION
+
+Ниже будет описание проекта клиента.
+
+{{CLIENT_DESCRIPTION}}
+
+---
+
+# AVAILABLE FILES
+
+При анализе могут быть приложены один или несколько файлов.
+
+Например:
+
+- description.txt
+- page.html
+- network.har
+- cookies.json
+- headers.json
+- response.json
+- screenshots
+- project_tree.txt
+- project_for_ai.txt
+
+Используй только те файлы, которые действительно были предоставлены.
+Не предполагай наличие отсутствующих файлов.
+
+---
+
+# YOUR TASK
+
+Выполни полный анализ проекта.
+Ответ должен состоять из следующих разделов.
+
+## 1. Краткое описание задачи
+
+Опиши своими словами, что хочет получить клиент.
+
+---
+
+## 2. Какой конечный результат нужен
+
+Например:
+
+- CSV
+- Excel
+- JSON
+- Database
+- API
+- изображения
+- PDF
+- другой формат
+
+---
+
+## 3. Как лучше решить задачу
+
+Если действительно требуется комбинация методов (например API + Playwright), выбери её и объясни почему.
+
+Например
+
+- requests
+- BeautifulSoup
+- Playwright
+- Scrapy
+- Selenium
+- API
+- комбинация нескольких методов
+
+Обязательно объясни почему.
+
+---
+
+## 4. Почему остальные варианты хуже
+
+Кратко объясни, почему ты НЕ рекомендуешь использовать остальные подходы.
+
+---
+
+## 5. Анализ сайта
+
+Определи насколько это возможно.
+
+Есть ли:
+
+- JavaScript Rendering
+- React
+- Vue
+- Angular
+- API
+- GraphQL
+- Infinite Scroll
+- Pagination
+- Login
+- Cookies
+- JWT
+- Bearer Token
+- CAPTCHA
+- Cloudflare
+- Rate Limits
+- Download Files
+- Upload Files
+- Lazy Loading
+- WebSocket
+- XHR/Fetch
+- Sitemap
+- robots.txt
+
+Если определить невозможно — так и напиши.
+
+---
+
+## 6. Что необходимо собрать до начала разработки
+
+Какие данные необходимо получить до начала разработки.
+
+Например
+
+- page.html
+- network.har
+- cookies
+- response.json
+- пример CSV
+- пример Excel
+- скриншоты
+- тестовый аккаунт
+- пример ожидаемого результата
+- образец выходного файла
+
+Если что-либо необходимо —
+перечисли это.
+
+---
+
+## 7. Возможные сложности
+
+Перечисли потенциальные проблемы.
+
+Например
+
+- блокировки
+- изменение HTML
+- скрытый API
+- динамическая загрузка
+- авторизация
+- ограничение скорости
+- большое количество страниц
+
+---
+
+## 8. Что нужно уточнить у клиента
+
+Если информации недостаточно —
+составь список вопросов клиенту.
+Не придумывай ответы самостоятельно.
+
+---
+
+## 9. Рекомендуемый стек технологий
+
+Укажи только основные технологии, которые будут использоваться.
+
+Например:
+
+- Python
+- Playwright
+- BeautifulSoup
+- requests
+- API
+
+Не перечисляй конкретные библиотеки для установки.
+
+Не составляй requirements.txt.
+
+
+---
+
+## 10. План разработки
+
+Разбей проект на логические этапы разработки.
+
+Каждый этап должен содержать:
+
+- цель;
+- ожидаемый результат;
+- зависимости (если есть).
+
+---
+
+## 11. Оценка сложности
+
+Оцени:
+
+- сложность (1–10);
+- время на разработки - (Estimation в часах)
+- вероятность блокировок;
+- вероятность необходимости использования браузера;
+- вероятность изменения сайта в будущем;
+- общую оценку риска.
+
+---
+
+## 12. Можно ли решить проще
+
+---
+Определи можно ли выполнить проект более простым способом.
+
+Например:
+
+API вместо HTML.
+Активно искать API в network.har или через консоль разработчика
+requests вместо Playwright.
+CSV вместо базы данных.
+Если существует более простое решение —
+обязательно предложи его.
+
+## 13. Итоговая рекомендация
+
+Кратко подведи итог.
+
+Ответь:
+
+- Какое решение рекомендуется.
+- Почему оно оптимально.
+- Что необходимо получить перед началом разработки.
+- Можно ли переходить к написанию кода или сначала нужно дождаться ответов клиента.
+
+
+# IMPORTANT RULES
+
+НЕ переходи к реализации.
+НЕ проектируй архитектуру классов.
+НЕ предлагай реализацию функций.
+НЕ предлагай  структуру каталогов.
+НЕ генерируй код.
+НЕ создавай Dockerfile.
+НЕ создавай requirements.txt.
+Не делай предположений, если информации недостаточно.
+Явно указывай уровень уверенности в своих выводах.
+
+# SELF-CHECK
+
+Перед отправкой ответа проверь:
+□ Я не написал код.
+□ Я не начал проектировать функции.
+□ Я выбрал наиболее подходящую технологию.
+□ Я перечислил возможные риски.
+□ Я указал, какой информации не хватает.
+□ Я сформировал список вопросов клиенту.
+□ Я предложил наиболее простое решение.
+□ Я не усложнил архитектуру без необходимости.
+Если хотя бы один пункт не выполнен — исправь ответ перед отправкой.
+
+====================================================================================================
+ФАЙЛ: scraping-templates\prompts\02_generate_project.md
+====================================================================================================
+
+# РОЛЬ
+
+Ты — Senior Python Developer / Web Scraping Engineer. Твоя цель — спроектировать техническое решение для конкретного сайта клиента **БЕЗ написания самого кода**. 
+
+Ты должен распределить логику по существующей функциональной структуре проекта.
+
+---
+
+# ВХОДНЫЕ ДАННЫЕ
+- **Описание задачи клиента:** {{CLIENT_DESCRIPTION}}
+- **Утвержденная стратегия (Шаг 1):** {{APPROVED_STRATEGY}}
+- **Анализ разметки/API (из файлов в AI_INPUT):** {{AI_INPUT_ANALYSIS}}
+
+---
+
+# СУЩЕСТВУЮЩАЯ СТРУКТУРА ЯДРА (НЕИЗМЕНЯЕМАЯ)
+
+В проекте **УЖЕ написаны, протестированы и не подлежат изменению** следующие файлы:
+- `app/main.py` — Оркестратор. Запускает скрапер, закрывает браузер, передает контент в парсер, вызывает экспортер.
+- `app/browser.py` — Функция `get_browser_context()`. browser.py предоставляет браузерный контекст, если выбран браузерный способ получения данных.
+- `app/config.py` — Все абсолютные пути к папкам (`OUTPUT_DIR`, `AI_INPUT_DIR`), таймауты и настройки сети.
+- `app/exporter.py` — Функции `save_to_csv()` и `save_to_json()` с поддержкой кодировки Excel (`utf-8-sig`).
+- `app/utils.py` — Логгер, кастомная очистка цен `clean_price()` и случайные паузы `random_delay()`.
+
+Твоя зона ответственности — **спроектировать наполнение для двух пустых модулей**: `app/scraper.py` и `app/parser.py`.
+
+Перед проектированием проверь, может ли задача быть решена существующими возможностями ядра.
+
+Не предлагай дублировать функции из:
+
+browser.py
+config.py
+utils.py
+exporter.py
+
+---
+
+# Архитектурные ограничения
+1. **БЕЗ КЛАДОВЫХ КЛАССОВ:** Никакого ООП. Проектируй решение строго на базе изолированных функций.
+2. **Единая ответственность:** - `scraper.py` отвечает *только* за сеть, навигацию, пагинацию, клики/скролл и сбор сырого контента. Он не должен знать, какие теги находятся внутри страницы.
+   - `parser.py` отвечает *только* за обработку сырого контента (BS4/JSON) в памяти. Он не должен делать никаких сетевых запросов.
+
+---
+
+# СТРАТЕГИЯ ОПРЕДЕЛЕНИЯ ТЕХНОЛОГИИ СБОРА
+
+Перед проектированием проанализируй входные данные и выбери оптимальный способ получения данных. 
+Приоритет выбора решения:
+
+1. Минимальная сложность
+2. Максимальная надежность
+3. Минимальное количество зависимостей
+4. Простота сопровождения
+5. Производительность (если это не противоречит первым четырем пунктам)
+
+1. **Есть API → использовать API.**
+Если API покрывает все требования клиента —
+используй API.
+Если API не предоставляет необходимые данные —
+объясни причину и переходи к следующему способу.   
+2. **Есть готовый HTML без JavaScript → использовать requests + BeautifulSoup**   
+3. **Контент появляется только после выполнения JavaScript, требуется авторизация через браузер, сложные взаимодействия или антибот → использовать Playwright.**
+   
+---
+
+# "Что останется неизвестным"
+
+После проектирования перечисли,
+
+какая информация отсутствует.
+
+Например:
+
+- неизвестен селектор товара
+
+- нет HAR
+
+- отсутствует пример HTML
+
+- неизвестна пагинация
+
+- неизвестна авторизация
+
+- неизвестно API
+
+Не выдумывай недостающие данные.
+
+Любое предположение явно помечай как:
+
+ПРЕДПОЛОЖЕНИЕ:
+
+---
+
+# "Почему выбран именно этот способ"
+
+Сначала объясни:
+
+Почему выбран API
+
+или
+
+Почему выбран HTML
+
+или
+
+Почему нужен Playwright
+
+Укажи плюсы и минусы выбранного варианта.
+
+---
+
+# ОЖИДАЕМЫЙ РЕЗУЛЬТАТ (ТВОЙ ОТВЕТ)
+
+Выполни проектирование реализации и распиши структуру будущих функций в следующем формате:
+
+### 1. Полный поток данных
+
+Опиши путь данных от входа до выхода. Это помогает избежать путаницы и понять общую картину.
+
+**Формат:**
+
+URL
+↓
+[Технология: Playwright / requests]
+↓
+[Сырые данные: HTML / JSON]
+↓
+[Парсер: BeautifulSoup / json.loads]
+↓
+[Структура: dict]
+↓
+[Список: list[dict]]
+↓
+[Экспортер: exporter.py → CSV / JSON]
+
+**Пример:**
+
+Клиент запускает main.py
+
+main.py инициализирует браузер через browser.py
+
+main.py вызывает scraper.fetch_listing()
+
+scraper.py загружает страницу со списком товаров через Playwright
+
+scraper.py передает сырой HTML в parser.parse_listing()
+
+parser.py использует BeautifulSoup для извлечения карточек товаров
+
+parser.py вызывает parse_single_item() для каждой карточки
+
+parser.py возвращает список словарей (list[dict]) в scraper.py
+
+scraper.py возвращает список в main.py
+
+main.py передает список в exporter.save_to_csv()
+
+### 2. Проектирование `app/scraper.py` (Сетевой сбор)
+
+* **2.1. Интерфейс функций
+
+Опиши контракт каждой функции, которую будет содержать `scraper.py`.
+Предложи необходимый набор функций.
+
+* **2.2 Алгоритм обхода:- **Опиши логику пагинации:**
+   - Будет ли это цикл по номерам страниц (`?page=2`)?
+   - Или клик по кнопке "Next" через Playwright?
+   - Или скроллинг (infinite scroll) с перехватом новых данных?
+   - Как функция `get_next_page()` будет определять URL следующей страницы?
+- **Поведение на странице:**
+   - Какие селекторы необходимо дождаться перед началом парсинга?
+   - Требуется ли скролл для подгрузки контента (Lazy Loading)?
+   - Нужно ли раскрывать табы, кликать на кнопки "Показать еще"?
+- **Используемые утилиты:**
+   - В каких местах будет вызываться `random_delay()` из `app.utils` для защиты от банов? (Например, между страницами, перед кликом).
+
+### 3. Проектирование `app/parser.py` (Экстракция данных)
+* **3.1. Интерфейс функций**
+Опиши контракт функций parser.py.
+
+Предложи необходимый набор функций.
+
+Для каждой функции укажи:
+
+- назначение;
+- входные параметры;
+- возвращаемое значение.
+
+Ниже приведён пример возможного интерфейса.
+
+**Формат таблицы:**
+
+| Функция | Назначение | Входные параметры | Возвращаемое значение |
+| :--- | :--- | :--- | :--- |
+| `parse_listing(html)` | Принимает сырой HTML страницы со списком, находит все карточки и вызывает `parse_single_item` для каждой. | `html: str` | `List[dict]` |
+| `parse_product(html)` | Принимает сырой HTML страницы товара и извлекает детальную информацию. | `html: str` | `dict` |
+| `parse_single_item(card)` | Извлекает данные из одного HTML-элемента (карточки) и возвращает словарь. | `card: bs4.element.Tag` | `dict` | 
+* **3.2. Спецификация полей**
+Опиши, как будут извлекаться данные. Если поле может отсутствовать, укажи значение по умолчанию (`None`, `""`, `0`).
+Пример структуры результата. Адаптируй поля под требования клиента. Не добавляй поля, которые клиент не запрашивал.
+
+* **3.3. Финальная структура результата**
+Покажи, как будет выглядеть один элемент после парсинга (для `parse_single_item` и `parse_product`).
+
+Это пример структуры. Адаптируй поля под требования клиента.
+
+```json
+{
+    "title": "Пример товара",
+    "price": 1250.50,
+    "currency": "$",
+    "url": "https://example.com/product/123",
+    "image": "https://example.com/img.jpg",
+    "availability": true,
+    "sku": "SKU-12345"
+}
+
+### 4. Обработка ошибок
+Опиши стратегию для каждого сценария. Это критически важно для стабильности скрапера.
+
+Формат:
+
+Сценарий	Действие
+Timeout (страница не загрузилась)	Предложи стратегию обработки timeout, включая количество повторов и условия остановки.. Если не удалось — записать ошибку в лог и пропустить страницу.
+HTTP 403 (Forbidden)	Записать в лог, остановить скрапер (или сделать длительную паузу).
+CAPTCHA	Записать в лог, остановить скрапер (требуется ручное вмешательство).
+Элемент не найден (отсутствует цена)	Записать None или значение по умолчанию в словарь. Не прерывать парсинг всей страницы.
+Битый JSON (если работаем с API)	Попытаться спарсить через json.loads() в try/except. При ошибке — записать в лог и вернуть None.
+Пустая страница (нет товаров)	Записать в лог и завершить пагинацию.
+
+---
+
+### 5. Оценка рисков
+Отметь, с какими рисками может столкнуться проект. Это поможет на этапе тестирования и отладки.
+
+Формат (чек-лист):
+
+Cloudflare (защита)
+
+Требуется авторизация (Login)
+
+Rate Limiting (ограничение по частоте запросов)
+
+CAPTCHA
+
+Infinite Scroll (бесконечный скролл)
+
+Shadow DOM
+
+iframe
+
+WebSocket (для обновления данных в реальном времени)
+
+GraphQL API
+
+Сложная структура DOM с частыми изменениями
+
+### 6. Порядок реализации
+Чтобы разработка шла последовательно, предложи порядок написания модулей. Обоснуй порядок, а не задавать его заранее.
+
+Формат:
+
+text
+1. parser.py — Написать первым, так как он не зависит от сети. Можно тестировать на сохраненном HTML из AI_INPUT/page.html.
+2. scraper.py — Написать вторым, используя готовый парсер для обработки полученных данных.
+3. Интеграция в main.py — Подключить готовые модули к оркестратору.
+4. Написание тестов — Создать тесты для парсера на фиксированных HTML-страницах.
+
+# ОГРАНИЧЕНИЯ
+- **ЗАПРЕЩЕНО генерировать готовый Python-код.** Пиши только псевдокод, селекторы и текстовое описание алгоритмов.
+- Не предлагай изменять `main.py` или `config.py`. Твое решение должно идеально встроиться в текущие интерфейсы функций ядра.
+- Не усложняй архитектуру. Выбирай самое простое решение, которое покрывает требования клиента.
+
+
+### 7. "Краткое резюме"
+
+В конце ответа кратко перечисли:
+
+- выбранную технологию;
+- основные функции scraper.py;
+- основные функции parser.py;
+- итоговую структуру данных;
+- главные риски проекта.
+
+====================================================================================================
+ФАЙЛ: scraping-templates\prompts\03_generate_module.md
+====================================================================================================
+
+# РОЛЬ
+
+Ты — Senior Python Web Scraping Engineer. Твоя задача — написать **только один файл**: `{{MODULE_FILE}}`.
+
+Не меняй другие файлы. Не создавай новые папки.
+
+---
+
+# ПРАВИЛА
+
+{{AI_RULES}}
+
+---
+
+# КОНТЕКСТ ПРОЕКТА
+
+## Анализ (этап 1)
+
+{{ANALYSIS}}
+
+---
+
+## План проекта (этап 2)
+
+{{PROJECT_PLAN}}
+
+---
+
+## Данные клиента
+
+{{AI_INPUT}}
+
+---
+
+# ЯДРО ПРОЕКТА (НЕ МЕНЯТЬ)
+
+Следующие файлы уже написаны и протестированы. Используй их интерфейсы, не дублируй логику:
+
+{{CORE_FILES}}
+
+---
+
+# ТЕКУЩИЙ ШАБЛОН МОДУЛЯ
+
+Файл `{{MODULE_FILE}}` — перепиши его полностью под план проекта:
+
+{{MODULE_TEMPLATE}}
+
+---
+
+# ЗАДАЧА
+
+Сгенерируй **полный рабочий код** для `{{MODULE_FILE}}` (модуль: **{{MODULE_NAME}}**).
+
+## Требования
+
+1. **Только функции** — без классов.
+2. **Один файл** — весь код модуля в одном ответе.
+3. **Следуй project_plan.md** — имена функций, сигнатуры, алгоритм.
+4. **Не трогай ядро** — `main.py` уже вызывает `fetch_page_data()` и `parse_html_data()`. Сохрани эти имена или обнови только если план явно требует другие.
+5. **Минимум зависимостей** — используй только то, что уже есть в проекте.
+6. **Обработка ошибок** — try/except на уровне страниц/элементов, не падай на одной ошибке.
+7. **Логирование** — `print(f"[{__file__}] ...")` как в шаблоне.
+
+## Если модуль = scraper
+
+- Отвечает **только** за сеть, навигацию, пагинацию, скролл, клики.
+- Возвращает `List[str]` — список сырого HTML (или JSON-строк).
+- Не парсит DOM — это задача parser.py.
+- Используй `app.config` для таймаутов и путей.
+- Используй `random_delay()` из `app.utils` между запросами.
+
+## Если модуль = parser
+
+- Отвечает **только** за извлечение данных из сырого контента.
+- Принимает `List[str]`, возвращает `List[Dict[str, Any]]`.
+- Используй BeautifulSoup для HTML.
+- Сохрани функцию `parse_single_item()` для парсинга одного элемента.
+- Поля результата — строго по project_plan.md.
+
+---
+
+# ФОРМАТ ОТВЕТА
+
+1. Кратко (3–5 строк): что делает модуль.
+2. Полный код файла `{{MODULE_FILE}}` в одном блоке:
+
+```python
+# полный код здесь
+```
+
+3. Как протестировать локально (1–2 команды).
+
+**ЗАПРЕЩЕНО:**
+- Писать код для других файлов.
+- Добавлять GUI, CLI, меню.
+- Добавлять функции, которых нет в project_plan.md.
+- Использовать классы.
+
+====================================================================================================
+ФАЙЛ: scraping-templates\prompts\04_debug.md
+====================================================================================================
+
+# РОЛЬ
+
+Ты — Senior Python Web Scraping Engineer. Скрапер упал с ошибкой. Найди причину и исправь **минимальным изменением**.
+
+---
+
+# ПРАВИЛА
+
+{{AI_RULES}}
+
+---
+
+# АНАЛИЗ ПРОЕКТА
+
+{{ANALYSIS}}
+
+---
+
+# ПЛАН ПРОЕКТА
+
+{{PROJECT_PLAN}}
+
+---
+
+# ТЕКУЩИЙ КОД
+
+{{CURRENT_CODE}}
+
+---
+
+# ОШИБКА / TRACEBACK
+
+{{ERROR_LOG}}
+
+---
+
+# ЗАДАЧА
+
+1. **Диагноз** — что именно сломалось и почему (2–5 предложений).
+2. **Исправление** — покажи только изменённые файлы с полным содержимым.
+3. **Проверка** — как убедиться, что исправление работает.
+
+## Ограничения
+
+- Меняй **только** файлы, где реальная ошибка.
+- Не рефактори код «заодно».
+- Не меняй `main.py`, `config.py`, `exporter.py`, `browser.py`, `utils.py` без крайней необходимости.
+- Не добавляй новые зависимости без объяснения.
+
+## Типичные причины
+
+- Неверный CSS-селектор (сайт изменил разметку)
+- Timeout (страница грузится дольше ожидаемого)
+- Cloudflare / 403
+- Пустой ответ API
+- Неверный формат cookies.json
+- Playwright: элемент не найден / не кликабелен
+
+---
+
+# ФОРМАТ ОТВЕТА
+
+### Диагноз
+...
+
+### Исправление
+
+```python
+# app/scraper.py (или другой файл) — полный исправленный код
+```
+
+### Как проверить
+...
+
+====================================================================================================
+ФАЙЛ: scraping-templates\prompts\05_refactor.md
+====================================================================================================
+
+
+
+====================================================================================================
+ФАЙЛ: scraping-templates\prompts\06_review.md
+====================================================================================================
+
+
+
+====================================================================================================
+ФАЙЛ: scraping-templates\prompts\07_optimize.md
+====================================================================================================
+
+
+
+====================================================================================================
+ФАЙЛ: scraping-templates\prompts\08_create_tests.md
+====================================================================================================
+
+
+
+====================================================================================================
+ФАЙЛ: scraping-templates\prompts\09_create_docker.md
+====================================================================================================
+
+# РОЛЬ
+
+Ты — DevOps-инженер. Создай Docker-конфигурацию для Python scraping-проекта **{{PROJECT_NAME}}**.
+
+Скрапер уже работает локально. Нужен Docker для сдачи клиенту.
+
+---
+
+# ПРАВИЛА
+
+{{AI_RULES}}
+
+---
+
+# АНАЛИЗ ПРОЕКТА
+
+{{ANALYSIS}}
+
+---
+
+# REQUIREMENTS
+
+```
+{{REQUIREMENTS}}
+```
+
+---
+
+# КОД ПРОЕКТА
+
+{{PROJECT_CODE}}
+
+---
+
+# ЗАДАЧА
+
+Сгенерируй три файла:
+
+## 1. Dockerfile
+
+- Python 3.11 slim
+- Установка зависимостей из requirements.txt
+- Если используется Playwright — установка браузера
+- `IS_DOCKER=1` и `HEADLESS=1` в ENV
+- Точка входа: `python -m app.main`
+- Результаты в `/app/output` (volume)
+
+## 2. docker-compose.yml
+
+- Сервис `scraper`
+- Volume для `output/`
+- Переменные окружения из `.env`
+- `restart: "no"` (одноразовый запуск)
+
+## 3. .env.example
+
+- `HEADLESS=1`
+- `IS_DOCKER=1`
+- `SCRAPER_TIMEOUT=30`
+- `SCRAPER_RETRY=3`
+- `PROXY_URL=` (пустой)
+
+---
+
+# ФОРМАТ ОТВЕТА
+
+Для каждого файла — полное содержимое:
+
+### Dockerfile
+```dockerfile
+...
+```
+
+### docker-compose.yml
+```yaml
+...
+```
+
+### .env.example
+```
+...
+```
+
+### Как запустить
+```bash
+docker compose up --build
+```
+
+**ЗАПРЕЩЕНО** менять код в `app/`. Только Docker-файлы.
+
+====================================================================================================
+ФАЙЛ: scraping-templates\scripts\tools\create_project.py
+====================================================================================================
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Создание нового проекта. Используй ai_workflow.py:
+
+    python ai_workflow.py new <project_name>
+"""
+
+import subprocess
+import sys
+from pathlib import Path
+
+WORKSPACE = Path(__file__).resolve().parent.parent.parent.parent
+AI_WORKFLOW = WORKSPACE / "ai_workflow.py"
+
+
+def main() -> None:
+    if len(sys.argv) < 2:
+        print("Использование: python create_project.py <project_name>")
+        print("Или:          python ai_workflow.py new <project_name>")
+        sys.exit(1)
+
+    cmd = [sys.executable, str(AI_WORKFLOW), "new", sys.argv[1]]
+    subprocess.run(cmd, check=False)
+
+
+if __name__ == "__main__":
+    main()
+
+====================================================================================================
+ФАЙЛ: scraping-templates\scripts\tools\dump_full_project.py
+====================================================================================================
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+Створює повний дамп структури проекту.
+
+✔ Записує ВСІ папки та підпапки.
+✔ Записує ВСІ файли (крім виключених директорій).
+✔ Записує повний вміст кожного файлу.
+✔ Малює красиве дерево проекту.
+✔ Працює з будь-якою глибиною вкладеності.
+"""
+
+from pathlib import Path
+from datetime import datetime
+
+# ---------------------------------------------------------------------
+# Налаштування
+# ---------------------------------------------------------------------
+
+ROOT_DIR = Path(__file__).parent.resolve()
+
+OUTPUT_FILE = ROOT_DIR / "my_project_structure.txt"
+
+EXCLUDE_DIRS = {
+    ".git",
+    ".idea",
+    ".vscode",
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".venv",
+    "venv",
+    "env",
+    "node_modules",
+    "dist",
+    "build",
+    "logs",
+}
+
+EXCLUDE_FILES = {
+    OUTPUT_FILE.name,
+}
+
+# ---------------------------------------------------------------------
+
+
+def should_skip(path: Path) -> bool:
+    """
+    Перевіряє чи потрібно пропустити файл або папку.
+    """
+    for part in path.relative_to(ROOT_DIR).parts:
+        if part in EXCLUDE_DIRS:
+            return True
+
+    if path.is_file() and path.name in EXCLUDE_FILES:
+        return True
+
+    return False
+
+
+# ---------------------------------------------------------------------
+
+
+def get_all_files():
+    """
+    Повертає список всіх файлів проекту.
+    """
+    files = []
+
+    for path in ROOT_DIR.rglob("*"):
+
+        if should_skip(path):
+            continue
+
+        if path.is_file():
+            files.append(path)
+
+    return sorted(files)
+
+
+# ---------------------------------------------------------------------
+
+
+def write_tree(directory: Path, out, prefix=""):
+    """
+    Малює дерево директорій.
+    """
+
+    items = []
+
+    for item in directory.iterdir():
+
+        if should_skip(item):
+            continue
+
+        items.append(item)
+
+    items.sort(key=lambda p: (p.is_file(), p.name.lower()))
+
+    count = len(items)
+
+    for index, item in enumerate(items):
+
+        last = index == count - 1
+
+        connector = "└── " if last else "├── "
+
+        if item.is_dir():
+
+            out.write(f"{prefix}{connector}📁 {item.name}/\n")
+
+            extension = "    " if last else "│   "
+
+            write_tree(item, out, prefix + extension)
+
+        else:
+
+            out.write(f"{prefix}{connector}📄 {item.name}\n")
+
+
+# ---------------------------------------------------------------------
+
+
+def dump_project():
+
+    print("=" * 70)
+    print("Створення дампу проекту...")
+    print(ROOT_DIR)
+    print("=" * 70)
+
+    files = get_all_files()
+
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as out:
+
+        # --------------------------------------------------------------
+
+        out.write("=" * 100 + "\n")
+        out.write("ПОВНИЙ ДАМП ПРОЕКТУ\n")
+        out.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\n")
+        out.write("=" * 100 + "\n\n")
+
+        # --------------------------------------------------------------
+
+        out.write("СТРУКТУРА ПРОЕКТУ\n")
+        out.write("-" * 100 + "\n\n")
+
+        out.write(f"📁 {ROOT_DIR.name}/\n")
+        write_tree(ROOT_DIR, out)
+
+        # --------------------------------------------------------------
+
+        out.write("\n")
+        out.write("=" * 100 + "\n")
+        out.write("ВМІСТ ФАЙЛІВ\n")
+        out.write("=" * 100 + "\n")
+
+        for file in files:
+
+            rel = file.relative_to(ROOT_DIR)
+
+            out.write("\n")
+            out.write("=" * 100 + "\n")
+            out.write(f"ФАЙЛ: {rel}\n")
+            out.write("=" * 100 + "\n\n")
+
+            try:
+
+                content = file.read_text(
+                    encoding="utf-8",
+                    errors="replace"
+                )
+
+                out.write(content)
+
+                if not content.endswith("\n"):
+                    out.write("\n")
+
+            except Exception as e:
+
+                out.write(f"[ПОМИЛКА ЧИТАННЯ: {e}]\n")
+
+        # --------------------------------------------------------------
+
+        out.write("\n")
+        out.write("=" * 100 + "\n")
+        out.write("СТАТИСТИКА\n")
+        out.write("=" * 100 + "\n")
+
+        out.write(f"Всього файлів : {len(files)}\n")
+
+        extensions = {}
+
+        for file in files:
+            ext = file.suffix if file.suffix else "<без розширення>"
+            extensions[ext] = extensions.get(ext, 0) + 1
+
+        out.write("\nЗа типами:\n")
+
+        for ext in sorted(extensions):
+            out.write(f"  {ext:<20} {extensions[ext]}\n")
+
+    print()
+    print("✅ Готово!")
+    print(f"Файл: {OUTPUT_FILE}")
+    print(f"Файлів: {len(files)}")
+    print(f"Розмір: {OUTPUT_FILE.stat().st_size / 1024:.1f} KB")
+
+
+# ---------------------------------------------------------------------
+
+if __name__ == "__main__":
+    dump_project()
+
+====================================================================================================
+ФАЙЛ: scraping-templates\scripts\tools\dump_structure.py
+====================================================================================================
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+from pathlib import Path
+
+# Скрипт лежит в ...\scraping-templates\scripts\tools\
+# Нам нужно подняться на 3 уровня вверх, чтобы попасть в UPWORK-ALL\
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
+
+# Целевой файл
+OUTPUT_FILE = ROOT_DIR / "starter-project" / "PROJECT_STRUCTURE.md"
+
+# Папки, которые нужно игнорировать
+EXCLUDE_DIRS = {
+    ".git", ".idea", ".vscode", "__pycache__", ".pytest_cache", 
+    ".mypy_cache", ".ruff_cache", ".venv", "venv", "env", 
+    "node_modules", "dist", "build", "logs"
+}
+
+def write_tree(directory, out, prefix=""):
+    """Рекурсивно рисует структуру папок."""
+    try:
+        items = sorted(
+            [item for item in directory.iterdir() if item.name not in EXCLUDE_DIRS], 
+            key=lambda p: (p.is_file(), p.name.lower())
+        )
+    except PermissionError:
+        return
+
+    for index, item in enumerate(items):
+        last = index == len(items) - 1
+        connector = "└── " if last else "├── "
+        
+        if item.is_dir():
+            out.write(f"{prefix}{connector}📁 {item.name}/\n")
+            write_tree(item, out, prefix + ("    " if last else "│   "))
+        else:
+            out.write(f"{prefix}{connector}📄 {item.name}\n")
+
+def dump_structure():
+    # Создаем папку, если её нет
+    OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
+    
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as out:
+        out.write(f"# Структура проекта: {ROOT_DIR.name}\n\n")
+        out.write("```text\n")
+        out.write(f"{ROOT_DIR.name}/\n")
+        write_tree(ROOT_DIR, out)
+        out.write("```\n")
+    
+    print(f"✅ Структура успешно создана:")
+    print(f"   {OUTPUT_FILE}")
+
+if __name__ == "__main__":
+    dump_structure()
+
+====================================================================================================
+ФАЙЛ: scraping-templates\scripts\tools\prepare_for_ai.py
+====================================================================================================
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Устаревший скрипт. Используй ai_workflow.py:
+
+    python ai_workflow.py analyze [project_name]
+    python ai_workflow.py project [project_name]
+    python ai_workflow.py module scraper [project_name]
+"""
+
+import subprocess
+import sys
+from pathlib import Path
+
+WORKSPACE = Path(__file__).resolve().parent.parent.parent.parent
+AI_WORKFLOW = WORKSPACE / "ai_workflow.py"
+
+
+def main() -> None:
+    print("[WARN] prepare_for_ai.py устарел. Используй: python ai_workflow.py analyze")
+    cmd = [sys.executable, str(AI_WORKFLOW), "analyze"] + sys.argv[1:]
+    subprocess.run(cmd, check=False)
+
+
+if __name__ == "__main__":
+    main()
+
+====================================================================================================
+ФАЙЛ: scraping-templates\snippets\Туда можно складывать маленькие куски.txt
+====================================================================================================
+
+Туда можно складывать маленькие куски.
+
+Например
+
+snippets/
+
+    save_json.py
+
+    save_csv.py
+
+    random_user_agent.py
+
+    proxy_rotation.py
+
+    logger.py
+
+    retry.py
+
+    cookies.py
+
+    headers.py
+
+    sqlite.py
+
+====================================================================================================
+ФАЙЛ: scraping-templates\templates\docker\Dockerfile
+====================================================================================================
+
+FROM python:3.11-slim
+
+WORKDIR /app
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    IS_DOCKER=1 \
+    HEADLESS=1
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt \
+    && playwright install --with-deps chromium
+
+COPY app/ ./app/
+COPY .env* ./
+
+RUN mkdir -p output input
+
+CMD ["python", "-m", "app.main"]
+
+====================================================================================================
+ФАЙЛ: starter-project\.env
+====================================================================================================
+
+# Режим запуска браузера: 1 — в фоне (для Docker/сервера), 0 — с показом экрана (для дебага)
+HEADLESS=0
+
+# Флаг, сообщающий коду, что запуск происходит внутри Docker-контейнера
+IS_DOCKER=0
+
+# Максимальное время ожидания загрузки страниц (в секундах)
+SCRAPER_TIMEOUT=30
+
+# Количество повторных попыток при сбое запроса
+SCRAPER_RETRY=3
+
+# Настройки прокси (если не нужны, оставьте пустой или закомментируйте)
+# PROXY_URL=http://username:password@host:port
+
+====================================================================================================
+ФАЙЛ: starter-project\AI_INPUT\answers.txt
+====================================================================================================
+
+answer1
+answer2
+answer3
+answer4
+...
+
+====================================================================================================
+ФАЙЛ: starter-project\AI_INPUT\cookies.json
+====================================================================================================
+
+
+
+====================================================================================================
+ФАЙЛ: starter-project\AI_INPUT\description.txt
+====================================================================================================
+
+надо извлечданные из одной страницы:
+https://www.olx.ua/uk/transport/legkovye-avtomobili/
+
+название
+цена
+вид топлива
+
+====================================================================================================
+ФАЙЛ: starter-project\AI_INPUT\headers.json
+====================================================================================================
+
+
+
+====================================================================================================
+ФАЙЛ: starter-project\AI_INPUT\network.har
+====================================================================================================
+
+
+
+====================================================================================================
+ФАЙЛ: starter-project\AI_INPUT\page.html
+====================================================================================================
+
+<div data-cy="l-card" data-testid="l-card" data-visually-ready-trigger-element="true" id="926825655" class="css-1sw7q4x"><div class="css-ri9uxm"><div type="list" class="css-hvzem4"><div type="list" class="css-e59vz0"><a class="css-1tqlkj0" href="/d/uk/obyavlenie/prodam-vaz-2104-inzhektor-ID10IRGT.html?search_reason=search%7Corganic"><div type="list" class="css-11ow61k"><div class="css-gl6djm"><img src="https://ireland.apollo.olxcdn.com:443/v1/files/j7i62vhov0t91-UA/image;s=216x152;q=50" srcset="https://ireland.apollo.olxcdn.com:443/v1/files/j7i62vhov0t91-UA/image;s=150x113;q=50 150w, https://ireland.apollo.olxcdn.com:443/v1/files/j7i62vhov0t91-UA/image;s=200x150;q=50 200w, https://ireland.apollo.olxcdn.com:443/v1/files/j7i62vhov0t91-UA/image;s=270x203;q=50 300w, https://ireland.apollo.olxcdn.com:443/v1/files/j7i62vhov0t91-UA/image;s=360x270;q=50 400w, https://ireland.apollo.olxcdn.com:443/v1/files/j7i62vhov0t91-UA/image;s=510x383;q=50 600w" sizes="216px" alt="Продам ваз 2104 инжектор" class="css-8wsg1m"></div></div><div class="css-6gymc3"><div class="css-1av34ht"><div class="css-3xiokn"></div></div></div></a></div><div type="list" class="css-ih6nf2"><div data-cy="ad-card-title" data-testid="ad-card-title" class="css-u2ayx9"><a aria-label="Продам ваз 2104 инжектор" class="css-1tqlkj0" href="/d/uk/obyavlenie/prodam-vaz-2104-inzhektor-ID10IRGT.html?search_reason=search%7Corganic"><h4 data-nx-name="H4" data-nx-legacy="true" class="css-wlcw7o">Продам ваз 2104 инжектор</h4></a><p data-testid="ad-price" data-nx-name="P2" data-nx-legacy="true" class="css-61fb99">51 165.64 грн.<span data-nx-name="Label2" data-nx-legacy="true" class="css-zf56ej">Договірна</span><span data-nx-name="Label2" data-nx-legacy="true" class="css-zf56ej"></span></p></div><div class="css-16y676b"><div class="flex flex-wrap items-end gap-(--spacing50)"></div><div data-testid="slot-wrapper" class="css-1smnjed"></div></div><div class="css-49upc6"><p data-testid="location-date" data-nx-name="P4" data-nx-legacy="true" class="css-1453zif">Самар - Сьогодні о 21:30</p><div color="text-global-secondary" class="css-13vv2xi"><span class="css-t4djs0"><span data-nx-name="P5" data-nx-legacy="true" class="css-h59g4b"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 24 24" data-testid="millage-card-param-icon" class="css-156kzg6"><g clip-path="url(#millage_svg__a)"><path fill="currentColor" fill-rule="evenodd" d="M12 13c-.6 0-1 .4-1 1s.4 1 1 1 1-.4 1-1c0-.5-.4-1-1-1m5-4v1.4l-1.3 1.3-1 1c.2.4.3.8.3 1.3 0 1.7-1.3 3-3 3s-3-1.3-3-3 1.3-3 3-3c.5 0 .9.1 1.3.3l1-1L15.6 9zm-5-3c-4.4 0-8 3.6-8 8 0 2.3.4 3.8 1.4 5h13.1c1-1.2 1.4-2.7 1.4-5 .1-4.4-3.5-8-7.9-8m0-2c5.5 0 10 4.5 10 10 0 2.2-.3 4.7-2.3 6.7l-.7.3H5l-.7-.3c-2-2-2.3-4.5-2.3-6.7C2 8.5 6.5 4 12 4" clip-rule="evenodd"></path></g><defs><clipPath id="millage_svg__a"><path fill="#fff" d="M2 4h20v17H2z"></path></clipPath></defs></svg>2007  150 тис.км.</span><span data-nx-name="P5" data-nx-legacy="true" class="css-h59g4b"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 24 24" class="css-156kzg6"><path fill="currentColor" fill-rule="evenodd" d="M21 4a2 2 0 0 0-4 0c0 .738.405 1.376 1 1.723v4.863l-.414.414H13V5.745A1.99 1.99 0 0 0 14.042 4a2 2 0 0 0-4 0c0 .721.385 1.348.958 1.7V11H6V5.723A1.994 1.994 0 0 0 5 2a1.994 1.994 0 0 0-1 3.723v12.554c-.595.347-1 .984-1 1.723a2 2 0 0 0 4 0c0-.739-.405-1.376-1-1.723V13h5v5.3a1.99 1.99 0 0 0-.958 1.7 2 2 0 0 0 4 0A1.99 1.99 0 0 0 13 18.255V13h5.414L20 11.414V5.723c.595-.347 1-.985 1-1.723" clip-rule="evenodd"></path></svg>Механічна</span><span data-nx-name="P5" data-nx-legacy="true" class="css-h59g4b"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 24 24" class="css-156kzg6"><path fill="currentColor" d="M10.997 9H6V5h4.997z"></path><path fill="currentColor" fill-rule="evenodd" d="M16 3.042h3.408L22 5.579v13.422C22 20.206 21.201 22 19 22s-3-1.794-3-3v-6c0-.806-.55-.989-1.011-1H14v10H3V3.001l1-1h9l1 1V10h1c1.206 0 3 .799 3 3v6c.012.449.195 1 1 1 .806 0 .988-.55 1-1.011V6.421l-1.408-1.379H16l-1-1.041zM12 20H5V4.001h7z" clip-rule="evenodd"></path></svg>Газ / бензин</span></span></div></div><button type="button" data-testid="adAddToFavorites" aria-label="Підписатися: Продам ваз 2104 инжектор" aria-pressed="false" class="css-kmyhfy" data-nx-name="UnstyledButton"><div data-testid="favorite-icon" class="css-1iakee2">Підписатися</div><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="1em" height="1em" class="css-py8enh"><path fill="currentColor" fill-rule="evenodd" d="M20.219 10.367 12 20.419 3.806 10.4A3.96 3.96 0 0 1 3 8c0-2.206 1.795-4 4-4a4.004 4.004 0 0 1 3.868 3h2.264A4 4 0 0 1 17 4c2.206 0 4 1.794 4 4 0 .868-.279 1.698-.781 2.367M17 2a6 6 0 0 0-5 2.686A6 6 0 0 0 7 2C3.692 2 1 4.691 1 8a5.97 5.97 0 0 0 1.232 3.633L10.71 22h2.582l8.501-10.399A5.94 5.94 0 0 0 23 8c0-3.309-2.692-6-6-6"></path></svg></button></div></div></div></div>
+
+====================================================================================================
+ФАЙЛ: starter-project\AI_OUTPUT\analysis.md
+====================================================================================================
+
+1. Краткое описание задачи
+
+Клиенту необходимо извлечь данные с одной страницы OLX:
+
+https://www.olx.ua/uk/transport/legkovye-avtomobili/
+
+Для каждого объявления требуется получить:
+
+название;
+цену;
+вид топлива.
+
+Уровень уверенности: высокий.
+
+2. Какой конечный результат нужен
+
+В описании проекта конечный формат не указан.
+
+Возможные варианты:
+
+CSV
+Excel
+JSON
+
+На данный момент формат результата необходимо уточнить у клиента.
+
+Уровень уверенности: высокий.
+
+3. Как лучше решить задачу
+Рекомендуемое решение
+
+requests + BeautifulSoup
+
+Почему:
+
+требуется собрать данные только с одной страницы;
+предоставлен HTML страницы, в котором уже присутствуют необходимые поля;
+название, цена и вид топлива находятся непосредственно в HTML;
+нет признаков необходимости взаимодействия с интерфейсом;
+Playwright или Selenium будут избыточными, если HTML получается обычным HTTP-запросом.
+
+Перед разработкой желательно проверить, не получает ли страница данные через внутренний API (по network.har), однако файл HAR оказался пустым, поэтому сделать такой вывод сейчас невозможно.
+
+Оптимальная стратегия:
+
+Сначала проверить возможность получения страницы через обычный HTTP-запрос.
+Если HTML содержит объявления — использовать requests.
+Только если сервер возвращает пустую страницу или требует JS — переходить на Playwright.
+
+Уровень уверенности: средний (нет HAR).
+
+4. Почему остальные варианты хуже
+Playwright
+
+Не рекомендуется как первый выбор.
+
+Минусы:
+
+медленнее;
+потребляет больше ресурсов;
+сложнее поддерживать;
+не нужен, если данные уже есть в HTML.
+Selenium
+
+Еще более тяжелое решение.
+
+Минусы:
+
+медленнее Playwright;
+не дает преимуществ для данной задачи.
+Scrapy
+
+Избыточен.
+
+Проект состоит из одной страницы и трех полей.
+
+API
+
+Это был бы лучший вариант, если он существует.
+
+Но подтверждения наличия API нет, поскольку:
+
+network.har пустой.
+5. Анализ сайта
+
+По предоставленным данным.
+
+Возможность	Статус
+JavaScript Rendering	определить невозможно
+React	определить невозможно
+Vue	определить невозможно
+Angular	определить невозможно
+API	определить невозможно
+GraphQL	определить невозможно
+Infinite Scroll	определить невозможно
+Pagination	определить невозможно
+Login	не требуется для данной страницы
+Cookies	определить невозможно
+JWT	определить невозможно
+Bearer Token	определить невозможно
+CAPTCHA	определить невозможно
+Cloudflare	определить невозможно
+Rate Limits	определить невозможно
+Download Files	нет данных
+Upload Files	нет
+Lazy Loading	изображения используют lazy loading, данные объявлений находятся в HTML
+WebSocket	определить невозможно
+XHR/Fetch	определить невозможно
+Sitemap	не анализировался
+robots.txt	не анализировался
+Что видно из HTML
+
+Необходимые поля уже находятся внутри карточки объявления.
+
+Например:
+
+Название:
+
+Продам ваз 2104 інжектор
+
+Цена:
+
+51 165.64 грн.
+
+Вид топлива:
+
+Газ / бензин
+
+Это хороший признак того, что парсинг HTML может быть достаточным.
+
+Уровень уверенности: высокий относительно HTML, низкий относительно механизма загрузки страницы.
+
+6. Что необходимо собрать до начала разработки
+
+Желательно получить:
+
+рабочий network.har (не пустой);
+пример ожидаемого результата (CSV/Excel/JSON);
+нужно ли собрать только первую страницу или все страницы;
+нужно ли сохранять ссылки на объявления.
+
+Остальные необходимые файлы уже есть частично:
+
+page.html ✔
+description ✔
+7. Возможные сложности
+
+Потенциальные проблемы:
+
+блокировка запросов;
+изменение HTML;
+возможный переход сайта на внутреннее API;
+возможный Cloudflare;
+возможные ограничения по User-Agent;
+возможные ограничения по частоте запросов.
+
+Если требуется только одна страница, риск невысокий.
+
+8. Что нужно уточнить у клиента
+Нужно обработать только первую страницу или все страницы категории?
+В каком формате нужен результат (CSV, Excel, JSON)?
+Нужно ли сохранять ссылку на объявление?
+Нужно ли собирать все объявления со страницы или есть ограничения по количеству?
+Нужно ли запускать парсер регулярно или достаточно одного запуска?
+Если обычный HTTP-запрос не подойдет, допустимо ли использовать браузерную автоматизацию (Playwright)?
+9. Рекомендуемый стек технологий
+
+Основной стек:
+
+Python
+requests
+BeautifulSoup
+
+Запасной вариант (только при необходимости):
+
+Playwright
+10. План разработки
+Этап 1. Анализ источника данных
+
+Цель
+
+Определить, можно ли получить HTML обычным HTTP-запросом.
+
+Результат
+
+Понятно, требуется ли браузер.
+
+Зависимости
+
+Нет.
+
+Этап 2. Извлечение данных
+
+Цель
+
+Получить:
+
+название;
+цену;
+вид топлива.
+
+Результат
+
+Структурированный набор данных.
+
+Зависимости
+
+Успешное получение HTML.
+
+Этап 3. Экспорт
+
+Цель
+
+Сохранить данные в согласованный формат.
+
+Результат
+
+CSV / Excel / JSON.
+
+Зависимости
+
+Этап 2.
+
+Этап 4. Проверка
+
+Цель
+
+Убедиться, что все объявления обработаны корректно.
+
+Результат
+
+Готовый файл без пропусков.
+
+Зависимости
+
+Все предыдущие этапы.
+
+11. Оценка сложности
+Параметр	Оценка
+Сложность	2/10
+Estimation	1–3 часа
+Вероятность блокировок	низкая–средняя
+Вероятность необходимости браузера	средняя
+Вероятность изменения сайта	средняя
+Общий риск	низкий–средний
+12. Можно ли решить проще
+
+Да.
+
+На текущий момент самым простым вариантом выглядит:
+
+requests → HTML → BeautifulSoup
+
+Это значительно проще, чем использование Playwright.
+
+Однако перед началом разработки стоит проверить наличие внутреннего API, поскольку:
+
+API будет быстрее;
+API будет стабильнее;
+API проще поддерживать.
+
+Сейчас сделать такой вывод невозможно, потому что:
+
+network.har пустой.
+13. Итоговая рекомендация
+
+Рекомендуемое решение
+
+Использовать Python + requests + BeautifulSoup, если HTML страницы доступен обычным HTTP-запросом.
+
+Почему это оптимально
+
+требуется собрать всего три поля;
+анализ предоставленного HTML показывает, что нужные данные уже присутствуют в разметке;
+решение будет самым простым, быстрым и легким в поддержке.
+
+Что необходимо получить перед началом разработки
+
+рабочий network.har (желательно, чтобы проверить наличие API);
+уточнение конечного формата результата;
+ответ, нужна ли только первая страница или вся категория.
+
+Можно ли переходить к написанию кода?
+
+Пока не рекомендуется. Сначала лучше дождаться ответов клиента на вопросы выше и, по возможности, получить корректный network.har, чтобы подтвердить, что нет более простого варианта через внутренний API.
+
+Общий уровень уверенности в выборе стратегии: 85%. Основная неопределенность связана с отсутствием рабочего network.har, из-за чего нельзя проверить наличие внутреннего API и точный способ загрузки данных.
+
+====================================================================================================
+ФАЙЛ: starter-project\AI_OUTPUT\analysis_response.md
+====================================================================================================
+
+
+
+====================================================================================================
+ФАЙЛ: starter-project\AI_OUTPUT\final_prompt.md
+====================================================================================================
+
+# РОЛЬ
+
+Ты — Senior Python Web Scraping Engineer. Твоя задача — написать **только один файл**: `app/parser.py`.
+
+Не меняй другие файлы. Не создавай новые папки.
+
+---
+
+# ПРАВИЛА
+
+ПРАВИЛА РАЗРАБОТКИ
+
+1. Всегда использовать starter-project.
+
+2. Не менять структуру каталогов.
+
+3. Не создавать новые папки без необходимости.
+
+4. Не писать код, который не требуется клиентом.
+
+5. Предпочитать простое решение сложному.
+
+6. Сначала искать API.
+
+7. Если API нет — рассматривать requests + BeautifulSoup.
+
+8. Playwright использовать только при необходимости.
+
+9. Код должен быть модульным.
+
+10. Docker создавать только после успешного локального запуска.
+
+---
+
+# КОНТЕКСТ ПРОЕКТА
+
+## Анализ (этап 1)
+
+1. Краткое описание задачи
+
+Клиенту необходимо извлечь данные с одной страницы OLX:
+
+https://www.olx.ua/uk/transport/legkovye-avtomobili/
+
+Для каждого объявления требуется получить:
+
+название;
+цену;
+вид топлива.
+
+Уровень уверенности: высокий.
+
+2. Какой конечный результат нужен
+
+В описании проекта конечный формат не указан.
+
+Возможные варианты:
+
+CSV
+Excel
+JSON
+
+На данный момент формат результата необходимо уточнить у клиента.
+
+Уровень уверенности: высокий.
+
+3. Как лучше решить задачу
+Рекомендуемое решение
+
+requests + BeautifulSoup
+
+Почему:
+
+требуется собрать данные только с одной страницы;
+предоставлен HTML страницы, в котором уже присутствуют необходимые поля;
+название, цена и вид топлива находятся непосредственно в HTML;
+нет признаков необходимости взаимодействия с интерфейсом;
+Playwright или Selenium будут избыточными, если HTML получается обычным HTTP-запросом.
+
+Перед разработкой желательно проверить, не получает ли страница данные через внутренний API (по network.har), однако файл HAR оказался пустым, поэтому сделать такой вывод сейчас невозможно.
+
+Оптимальная стратегия:
+
+Сначала проверить возможность получения страницы через обычный HTTP-запрос.
+Если HTML содержит объявления — использовать requests.
+Только если сервер возвращает пустую страницу или требует JS — переходить на Playwright.
+
+Уровень уверенности: средний (нет HAR).
+
+4. Почему остальные варианты хуже
+Playwright
+
+Не рекомендуется как первый выбор.
+
+Минусы:
+
+медленнее;
+потребляет больше ресурсов;
+сложнее поддерживать;
+не нужен, если данные уже есть в HTML.
+Selenium
+
+Еще более тяжелое решение.
+
+Минусы:
+
+медленнее Playwright;
+не дает преимуществ для данной задачи.
+Scrapy
+
+Избыточен.
+
+Проект состоит из одной страницы и трех полей.
+
+API
+
+Это был бы лучший вариант, если он существует.
+
+Но подтверждения наличия API нет, поскольку:
+
+network.har пустой.
+5. Анализ сайта
+
+По предоставленным данным.
+
+Возможность	Статус
+JavaScript Rendering	определить невозможно
+React	определить невозможно
+Vue	определить невозможно
+Angular	определить невозможно
+API	определить невозможно
+GraphQL	определить невозможно
+Infinite Scroll	определить невозможно
+Pagination	определить невозможно
+Login	не требуется для данной страницы
+Cookies	определить невозможно
+JWT	определить невозможно
+Bearer Token	определить невозможно
+CAPTCHA	определить невозможно
+Cloudflare	определить невозможно
+Rate Limits	определить невозможно
+Download Files	нет данных
+Upload Files	нет
+Lazy Loading	изображения используют lazy loading, данные объявлений находятся в HTML
+WebSocket	определить невозможно
+XHR/Fetch	определить невозможно
+Sitemap	не анализировался
+robots.txt	не анализировался
+Что видно из HTML
+
+Необходимые поля уже находятся внутри карточки объявления.
+
+Например:
+
+Название:
+
+Продам ваз 2104 інжектор
+
+Цена:
+
+51 165.64 грн.
+
+Вид топлива:
+
+Газ / бензин
+
+Это хороший признак того, что парсинг HTML может быть достаточным.
+
+Уровень уверенности: высокий относительно HTML, низкий относительно механизма загрузки страницы.
+
+6. Что необходимо собрать до начала разработки
+
+Желательно получить:
+
+рабочий network.har (не пустой);
+пример ожидаемого результата (CSV/Excel/JSON);
+нужно ли собрать только первую страницу или все страницы;
+нужно ли сохранять ссылки на объявления.
+
+Остальные необходимые файлы уже есть частично:
+
+page.html ✔
+description ✔
+7. Возможные сложности
+
+Потенциальные проблемы:
+
+блокировка запросов;
+изменение HTML;
+возможный переход сайта на внутреннее API;
+возможный Cloudflare;
+возможные ограничения по User-Agent;
+возможные ограничения по частоте запросов.
+
+Если требуется только одна страница, риск невысокий.
+
+8. Что нужно уточнить у клиента
+Нужно обработать только первую страницу или все страницы категории?
+В каком формате нужен результат (CSV, Excel, JSON)?
+Нужно ли сохранять ссылку на объявление?
+Нужно ли собирать все объявления со страницы или есть ограничения по количеству?
+Нужно ли запускать парсер регулярно или достаточно одного запуска?
+Если обычный HTTP-запрос не подойдет, допустимо ли использовать браузерную автоматизацию (Playwright)?
+9. Рекомендуемый стек технологий
+
+Основной стек:
+
+Python
+requests
+BeautifulSoup
+
+Запасной вариант (только при необходимости):
+
+Playwright
+10. План разработки
+Этап 1. Анализ источника данных
+
+Цель
+
+Определить, можно ли получить HTML обычным HTTP-запросом.
+
+Результат
+
+Понятно, требуется ли браузер.
+
+Зависимости
+
+Нет.
+
+Этап 2. Извлечение данных
+
+Цель
+
+Получить:
+
+название;
+цену;
+вид топлива.
+
+Результат
+
+Структурированный набор данных.
+
+Зависимости
+
+Успешное получение HTML.
+
+Этап 3. Экспорт
+
+Цель
+
+Сохранить данные в согласованный формат.
+
+Результат
+
+CSV / Excel / JSON.
+
+Зависимости
+
+Этап 2.
+
+Этап 4. Проверка
+
+Цель
+
+Убедиться, что все объявления обработаны корректно.
+
+Результат
+
+Готовый файл без пропусков.
+
+Зависимости
+
+Все предыдущие этапы.
+
+11. Оценка сложности
+Параметр	Оценка
+Сложность	2/10
+Estimation	1–3 часа
+Вероятность блокировок	низкая–средняя
+Вероятность необходимости браузера	средняя
+Вероятность изменения сайта	средняя
+Общий риск	низкий–средний
+12. Можно ли решить проще
+
+Да.
+
+На текущий момент самым простым вариантом выглядит:
+
+requests → HTML → BeautifulSoup
+
+Это значительно проще, чем использование Playwright.
+
+Однако перед началом разработки стоит проверить наличие внутреннего API, поскольку:
+
+API будет быстрее;
+API будет стабильнее;
+API проще поддерживать.
+
+Сейчас сделать такой вывод невозможно, потому что:
+
+network.har пустой.
+13. Итоговая рекомендация
+
+Рекомендуемое решение
+
+Использовать Python + requests + BeautifulSoup, если HTML страницы доступен обычным HTTP-запросом.
+
+Почему это оптимально
+
+требуется собрать всего три поля;
+анализ предоставленного HTML показывает, что нужные данные уже присутствуют в разметке;
+решение будет самым простым, быстрым и легким в поддержке.
+
+Что необходимо получить перед началом разработки
+
+рабочий network.har (желательно, чтобы проверить наличие API);
+уточнение конечного формата результата;
+ответ, нужна ли только первая страница или вся категория.
+
+Можно ли переходить к написанию кода?
+
+Пока не рекомендуется. Сначала лучше дождаться ответов клиента на вопросы выше и, по возможности, получить корректный network.har, чтобы подтвердить, что нет более простого варианта через внутренний API.
+
+Общий уровень уверенности в выборе стратегии: 85%. Основная неопределенность связана с отсутствием рабочего network.har, из-за чего нельзя проверить наличие внутреннего API и точный способ загрузки данных.
+
+---
+
+## План проекта (этап 2)
+
+Почему выбран именно этот способ
+Выбранный способ: HTML + requests + BeautifulSoup
+Почему
+
+Из предоставленного HTML видно, что все необходимые данные уже присутствуют в разметке карточек:
+
+название — внутри <h4>;
+цена — внутри <p>;
+вид топлива — один из <span> с характеристиками.
+
+Пустой network.har не позволяет подтвердить наличие внутреннего API, поэтому проектировать решение через API нельзя.
+
+Также отсутствуют признаки того, что для получения этих трех полей обязательно требуется выполнение JavaScript.
+
+Плюсы
+самая простая архитектура;
+минимальное количество зависимостей;
+быстро работает;
+легко тестировать по сохраненному HTML;
+полностью соответствует требованиям клиента.
+Минусы
+если OLX отдает неполный HTML обычным HTTP-запросом, потребуется переход на Playwright;
+CSS-классы у OLX могут изменяться.
+
+Уровень уверенности: высокий относительно парсинга HTML, средний относительно способа получения страницы.
+
+1. Полный поток данных
+URL
+    ↓
+requests
+    ↓
+HTML страницы
+    ↓
+parser.parse_listing(html)
+    ↓
+BeautifulSoup
+    ↓
+поиск карточек объявлений
+    ↓
+parse_single_item(card)
+    ↓
+dict
+    ↓
+list[dict]
+    ↓
+main.py
+    ↓
+exporter.save_to_csv()
+или
+exporter.save_to_json()
+
+Полный сценарий:
+
+Пользователь запускает main.py.
+main.py вызывает функцию получения HTML из scraper.py.
+scraper.py выполняет HTTP-запрос.
+Возвращает сырой HTML.
+main.py передает HTML в parser.py.
+parser.py извлекает все объявления.
+Возвращает list[dict].
+main.py передает данные в exporter.py.
+Экспортер сохраняет CSV или JSON.
+2. Проектирование app/scraper.py
+2.1 Интерфейс функций
+fetch_page(url)
+
+Назначение
+
+Получить HTML страницы.
+
+Принимает
+
+URL
+
+Возвращает
+
+HTML (str)
+либо None при ошибке.
+fetch_listing()
+
+Назначение
+
+Точка входа для получения списка объявлений.
+
+Функция:
+
+вызывает fetch_page();
+возвращает сырой HTML в main.py.
+
+Парсинг внутри нее не производится.
+
+2.2 Алгоритм обхода
+Пагинация
+
+По описанию клиента:
+
+извлечь данные из одной страницы.
+
+Следовательно:
+
+Пагинация отсутствует.
+
+Циклы по страницам проектировать не требуется.
+
+Поведение на странице
+
+При использовании requests:
+
+открыть URL;
+дождаться HTTP-ответа;
+вернуть HTML.
+
+Никаких:
+
+кликов;
+скроллов;
+раскрытия блоков;
+ожиданий элементов
+
+не требуется.
+
+Lazy Loading
+
+По HTML видно только ленивую загрузку изображений.
+
+Изображения клиенту не нужны.
+
+Следовательно:
+
+никаких дополнительных действий не требуется.
+
+Использование random_delay()
+
+Поскольку выполняется всего один запрос:
+
+использование необязательно.
+
+Допустимо вызвать один раз непосредственно перед выполнением HTTP-запроса, если это принято в существующем ядре проекта.
+
+3. Проектирование app/parser.py
+3.1 Интерфейс функций
+Функция	Назначение	Входные параметры	Возвращаемое значение
+parse_listing(html)	Разбирает HTML всей страницы, находит карточки объявлений	html: str	list[dict]
+parse_single_item(card)	Извлекает данные одной карточки	card: bs4.Tag	dict
+
+Других функций не требуется.
+
+3.2 Спецификация полей
+title
+
+Источник:
+
+<h4>
+
+Если отсутствует:
+
+None
+price
+
+Источник:
+
+<p class="...">
+
+Извлекается только основное значение цены.
+
+Текст "Договірна" игнорируется.
+
+После извлечения желательно использовать уже существующую функцию clean_price() из utils.py.
+
+Если цена отсутствует:
+
+None
+fuel_type
+
+Источник:
+
+последний элемент среди характеристик карточки.
+
+Пример:
+
+Газ / бензин
+
+Если поле отсутствует:
+
+None
+3.3 Финальная структура результата
+
+Один элемент:
+
+{
+    "title": "Продам ваз 2104 инжектор",
+    "price": 51165.64,
+    "fuel_type": "Газ / бензин"
+}
+
+Дополнительные поля не добавляются, так как клиент их не запрашивал.
+
+4. Обработка ошибок
+Сценарий	Действие
+Timeout	Выполнить ограниченное число повторных попыток (например, 2–3). При неудаче записать ошибку в лог и завершить обработку страницы.
+HTTP 403	Записать в лог и остановить выполнение. Это может означать блокировку.
+HTTP 404	Записать в лог и завершить работу.
+CAPTCHA	Записать в лог и остановить выполнение. Требуется ручное вмешательство.
+Ошибка соединения	Повторить запрос несколько раз. Затем завершить работу с сообщением в лог.
+Пустой HTML	Записать в лог и вернуть пустой список.
+Карточки не найдены	Вернуть пустой список без исключения.
+Не найдено название	Вернуть None.
+Не найдена цена	Вернуть None.
+Не найден вид топлива	Вернуть None.
+Изменился HTML	Записать предупреждение в лог. Не завершать обработку аварийно.
+5. Оценка рисков
+Cloudflare
+
+Неизвестно.
+
+Login
+
+Не требуется.
+
+Rate Limiting
+
+Возможен.
+
+CAPTCHA
+
+Неизвестно.
+
+Infinite Scroll
+
+Не обнаружен по предоставленным данным.
+
+Shadow DOM
+
+Не обнаружен.
+
+iframe
+
+Не обнаружен.
+
+WebSocket
+
+Неизвестно.
+
+GraphQL
+
+Неизвестно.
+
+Частые изменения DOM
+
+Средний риск.
+
+OLX использует автоматически генерируемые CSS-классы.
+
+При реализации желательно опираться не только на классы, но и на более устойчивую структуру карточки, где это возможно.
+
+6. Порядок реализации
+1. parser.py
+
+Почему первым:
+
+полностью независим от сети;
+можно тестировать на уже предоставленном page.html;
+быстрее выявляются ошибки селекторов.
+2. scraper.py
+
+После готовности парсера.
+
+Причина:
+
+сразу можно проверить получение HTML;
+сетевая часть минимальна.
+3. Интеграция
+
+Подключение модулей к существующему main.py.
+
+Изменений ядра не требуется.
+
+4. Проверка экспорта
+
+Проверить корректность сохранения через существующий exporter.py.
+
+5. Финальное тестирование
+
+Проверить:
+
+количество объявлений;
+заполненность полей;
+отсутствие ошибок при отсутствии отдельных элементов.
+Что останется неизвестным
+
+На основании предоставленных материалов невозможно определить:
+
+существует ли внутренний API;
+требуется ли JavaScript для формирования итогового HTML;
+есть ли Cloudflare;
+есть ли CAPTCHA;
+используется ли пагинация в реальной задаче (клиент указал только одну страницу);
+конечный формат экспорта (CSV/JSON/Excel);
+необходимы ли дополнительные поля помимо трех указанных.
+
+ПРЕДПОЛОЖЕНИЕ: обычный HTTP-запрос возвращает HTML с карточками объявлений в том виде, который был предоставлен в page.html. Это необходимо подтвердить перед реализацией.
+
+Краткое резюме
+
+Выбранная технология
+
+Python
+requests
+BeautifulSoup
+
+Основные функции scraper.py
+
+fetch_page(url) — получение HTML страницы.
+fetch_listing() — получение HTML страницы списка объявлений.
+
+Основные функции parser.py
+
+parse_listing(html) — извлечение всех карточек объявлений.
+parse_single_item(card) — извлечение названия, цены и вида топлива из одной карточки.
+
+Итоговая структура данных
+
+{
+    "title": "Продам ваз 2104 инжектор",
+    "price": 51165.64,
+    "fuel_type": "Газ / бензин"
+}
+
+Главные риски проекта
+
+отсутствие рабочего network.har, из-за чего нельзя подтвердить наличие API;
+возможная защита OLX (403, CAPTCHA, Cloudflare);
+изменение структуры HTML и CSS-классов;
+вероятность того, что в реальном запросе потребуется браузерная автоматизация, если HTML отличается от предоставленного образца.
+
+---
+
+## Данные клиента
+
+
+
+--- ФАЙЛ: description.txt ---
+надо извлечданные из одной страницы:
+https://www.olx.ua/uk/transport/legkovye-avtomobili/
+
+название
+цена
+вид топлива
+
+
+--- ФАЙЛ: answers.txt ---
+answer1
+answer2
+answer3
+answer4
+...
+
+--- ФАЙЛ: cookies.json ---
+
+
+--- ФАЙЛ: headers.json ---
+
+
+--- ФАЙЛ: network.har ---
+
+
+--- ФАЙЛ: page.html ---
+<div data-cy="l-card" data-testid="l-card" data-visually-ready-trigger-element="true" id="926825655" class="css-1sw7q4x"><div class="css-ri9uxm"><div type="list" class="css-hvzem4"><div type="list" class="css-e59vz0"><a class="css-1tqlkj0" href="/d/uk/obyavlenie/prodam-vaz-2104-inzhektor-ID10IRGT.html?search_reason=search%7Corganic"><div type="list" class="css-11ow61k"><div class="css-gl6djm"><img src="https://ireland.apollo.olxcdn.com:443/v1/files/j7i62vhov0t91-UA/image;s=216x152;q=50" srcset="https://ireland.apollo.olxcdn.com:443/v1/files/j7i62vhov0t91-UA/image;s=150x113;q=50 150w, https://ireland.apollo.olxcdn.com:443/v1/files/j7i62vhov0t91-UA/image;s=200x150;q=50 200w, https://ireland.apollo.olxcdn.com:443/v1/files/j7i62vhov0t91-UA/image;s=270x203;q=50 300w, https://ireland.apollo.olxcdn.com:443/v1/files/j7i62vhov0t91-UA/image;s=360x270;q=50 400w, https://ireland.apollo.olxcdn.com:443/v1/files/j7i62vhov0t91-UA/image;s=510x383;q=50 600w" sizes="216px" alt="Продам ваз 2104 инжектор" class="css-8wsg1m"></div></div><div class="css-6gymc3"><div class="css-1av34ht"><div class="css-3xiokn"></div></div></div></a></div><div type="list" class="css-ih6nf2"><div data-cy="ad-card-title" data-testid="ad-card-title" class="css-u2ayx9"><a aria-label="Продам ваз 2104 инжектор" class="css-1tqlkj0" href="/d/uk/obyavlenie/prodam-vaz-2104-inzhektor-ID10IRGT.html?search_reason=search%7Corganic"><h4 data-nx-name="H4" data-nx-legacy="true" class="css-wlcw7o">Продам ваз 2104 инжектор</h4></a><p data-testid="ad-price" data-nx-name="P2" data-nx-legacy="true" class="css-61fb99">51 165.64 грн.<span data-nx-name="Label2" data-nx-legacy="true" class="css-zf56ej">Договірна</span><span data-nx-name="Label2" data-nx-legacy="true" class="css-zf56ej"></span></p></div><div class="css-16y676b"><div class="flex flex-wrap items-end gap-(--spacing50)"></div><div data-testid="slot-wrapper" class="css-1smnjed"></div></div><div class="css-49upc6"><p data-testid="location-date" data-nx-name="P4" data-nx-legacy="true" class="css-1453zif">Самар - Сьогодні о 21:30</p><div color="text-global-secondary" class="css-13vv2xi"><span class="css-t4djs0"><span data-nx-name="P5" data-nx-legacy="true" class="css-h59g4b"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 24 24" data-testid="millage-card-param-icon" class="css-156kzg6"><g clip-path="url(#millage_svg__a)"><path fill="currentColor" fill-rule="evenodd" d="M12 13c-.6 0-1 .4-1 1s.4 1 1 1 1-.4 1-1c0-.5-.4-1-1-1m5-4v1.4l-1.3 1.3-1 1c.2.4.3.8.3 1.3 0 1.7-1.3 3-3 3s-3-1.3-3-3 1.3-3 3-3c.5 0 .9.1 1.3.3l1-1L15.6 9zm-5-3c-4.4 0-8 3.6-8 8 0 2.3.4 3.8 1.4 5h13.1c1-1.2 1.4-2.7 1.4-5 .1-4.4-3.5-8-7.9-8m0-2c5.5 0 10 4.5 10 10 0 2.2-.3 4.7-2.3 6.7l-.7.3H5l-.7-.3c-2-2-2.3-4.5-2.3-6.7C2 8.5 6.5 4 12 4" clip-rule="evenodd"></path></g><defs><clipPath id="millage_svg__a"><path fill="#fff" d="M2 4h20v17H2z"></path></clipPath></defs></svg>2007  150 тис.км.</span><span data-nx-name="P5" data-nx-legacy="true" class="css-h59g4b"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 24 24" class="css-156kzg6"><path fill="currentColor" fill-rule="evenodd" d="M21 4a2 2 0 0 0-4 0c0 .738.405 1.376 1 1.723v4.863l-.414.414H13V5.745A1.99 1.99 0 0 0 14.042 4a2 2 0 0 0-4 0c0 .721.385 1.348.958 1.7V11H6V5.723A1.994 1.994 0 0 0 5 2a1.994 1.994 0 0 0-1 3.723v12.554c-.595.347-1 .984-1 1.723a2 2 0 0 0 4 0c0-.739-.405-1.376-1-1.723V13h5v5.3a1.99 1.99 0 0 0-.958 1.7 2 2 0 0 0 4 0A1.99 1.99 0 0 0 13 18.255V13h5.414L20 11.414V5.723c.595-.347 1-.985 1-1.723" clip-rule="evenodd"></path></svg>Механічна</span><span data-nx-name="P5" data-nx-legacy="true" class="css-h59g4b"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 24 24" class="css-156kzg6"><path fill="currentColor" d="M10.997 9H6V5h4.997z"></path><path fill="currentColor" fill-rule="evenodd" d="M16 3.042h3.408L22 5.579v13.422C22 20.206 21.201 22 19 22s-3-1.794-3-3v-6c0-.806-.55-.989-1.011-1H14v10H3V3.001l1-1h9l1 1V10h1c1.206 0 3 .799 3 3v6c.012.449.195 1 1 1 .806 0 .988-.55 1-1.011V6.421l-1.408-1.379H16l-1-1.041zM12 20H5V4.001h7z" clip-rule="evenodd"></path></svg>Газ / бензин</span></span></div></div><button type="button" data-testid="adAddToFavorites" aria-label="Підписатися: Продам ваз 2104 инжектор" aria-pressed="false" class="css-kmyhfy" data-nx-name="UnstyledButton"><div data-testid="favorite-icon" class="css-1iakee2">Підписатися</div><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="1em" height="1em" class="css-py8enh"><path fill="currentColor" fill-rule="evenodd" d="M20.219 10.367 12 20.419 3.806 10.4A3.96 3.96 0 0 1 3 8c0-2.206 1.795-4 4-4a4.004 4.004 0 0 1 3.868 3h2.264A4 4 0 0 1 17 4c2.206 0 4 1.794 4 4 0 .868-.279 1.698-.781 2.367M17 2a6 6 0 0 0-5 2.686A6 6 0 0 0 7 2C3.692 2 1 4.691 1 8a5.97 5.97 0 0 0 1.232 3.633L10.71 22h2.582l8.501-10.399A5.94 5.94 0 0 0 23 8c0-3.309-2.692-6-6-6"></path></svg></button></div></div></div></div>
+
+---
+
+# ЯДРО ПРОЕКТА (НЕ МЕНЯТЬ)
+
+Следующие файлы уже написаны и протестированы. Используй их интерфейсы, не дублируй логику:
+
+
+
+--- app/main.py (НЕ МЕНЯТЬ) ---
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent.resolve()))  # Добавляет starter-project в пути Python
+from playwright.sync_api import sync_playwright
+
+from app.config import COOKIES_FILE
+from app.browser import get_browser_context
+from app.scraper import fetch_page_data
+from app.parser import parse_html_data
+from app.exporter import save_to_csv, save_to_json
+
+def main() -> None:
+    """
+    Главная точка входа. Управляет жизненным циклом парсера.
+    """
+    print("=" * 70)
+    print(f"[{__file__}] ЗАПУСК ПАРСЕРА")
+    print("=" * 70)
+
+    # Инициализируем хранилище для собранных данных
+    scraped_results = []
+
+    try:
+        # 1. Запуск контекста автоматизации (Playwright)
+        with sync_playwright() as playwright:
+            
+            # Получаем настроенный контекст браузера (переменные подтянутся из config)
+            context = get_browser_context(
+                playwright_instance=playwright,
+                cookies_path=COOKIES_FILE
+            )
+            
+            # 2. Сбор данных (Scraping)
+            # Передаем контекст браузера в scraper.py для обхода страниц
+            raw_pages_content = fetch_page_data(context)
+            
+            # Закрываем браузер сразу, как только закончили сетевую работу
+            context.browser.close()
+            print(f"[{__file__}] Браузер успешно закрыт.")
+
+            # 3. Обработка данных (Parsing)
+            # Передаем собранный HTML/JSON контент в parser.py для извлечения полей
+            if raw_pages_content:
+                print(f"[{__file__}] Начало парсинга контента...")
+                scraped_results = parse_html_data(raw_pages_content)
+            else:
+                print(f"[{__file__}] Критическая ошибка: Нечего парсить (список страниц пуст).")
+                sys.exit(1)
+
+        # 4. Экспорт результатов (Export)
+        if scraped_results:
+            print(f"[{__file__}] Экспорт данных (Всего элементов: {len(scraped_results)})...")
+            
+            # Сохраняем в оба формата (на Upwork клиенты любят иметь выбор)
+            save_to_csv(scraped_results, "output_results.csv")
+            save_to_json(scraped_results, "output_results.json")
+            
+            print("=" * 70)
+            print(f"[{__file__}] РАБОТА ПОЛНОСТЬЮ ЗАВЕРШЕНА УСПЕШНО")
+            print("=" * 70)
+        else:
+            print(f"[{__file__}] Предупреждение: Парсер вернул пустой результат. Файлы не созданы.")
+
+    except KeyError as ke:
+        print(f"[{__file__}] Ошибка конфигурации или структуры: {ke}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"[{__file__}] Критический сбой в главном потоке: {e}")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
+
+--- app/browser.py (НЕ МЕНЯТЬ) ---
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import os
+import json
+from pathlib import Path
+from playwright.sync_api import sync_playwright, Browser, BrowserContext
+
+def load_cookies_if_exist(context: BrowserContext, cookies_path: Path) -> None:
+    """
+    Загружает куки в контекст браузера, если файл существует.
+    """
+    if cookies_path.exists() and cookies_path.stat().st_size > 0:
+        try:
+            with open(cookies_path, "r", encoding="utf-8") as f:
+                cookies = json.load(f)
+                context.add_cookies(cookies)
+            print(f"[{__file__}] Куки успешно загружены из {cookies_path.name}")
+        except Exception as e:
+            print(f"[{__file__}] Ошибка при загрузке кук: {e}")
+
+def get_browser_context(
+    playwright_instance, 
+    headless: bool = None, 
+    user_agent: str = None,
+    cookies_path: Path = None
+) -> BrowserContext:
+    """
+    Инициализирует настроенный браузер и возвращает изолированный контекст.
+    """
+    # 1. Автоматически определяем режим (Docker/переменные окружения или дефолт)
+    # Если headless не передан, смотрим в .env или ставим True, если мы в Docker
+    if headless is None:
+        headless = os.getenv("HEADLESS", "0") == "1" or os.getenv("IS_DOCKER") == "1"
+
+    # Дефолтный качественный User-Agent, если не передан кастомный
+    if not user_agent:
+        user_agent = (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "Anonymized/Chrome/120.0.0.0 Safari/537.36"
+        )
+
+    print(f"[{__file__}] Запуск Chromium (Headless={headless})...")
+
+    # 2. Запуск браузера с флагами против падений в Docker
+    browser: Browser = playwright_instance.chromium.launch(
+        headless=headless,
+        args=[
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-blink-features=AutomationControlled" # Скрывает автоматизацию
+        ]
+    )
+
+    # 3. Создание контекста с маскировкой параметров
+    context: BrowserContext = browser.new_context(
+        user_agent=user_agent,
+        viewport={"width": 1920, "height": 1080},
+        device_scale_factor=1,
+        is_mobile=False,
+        has_touch=False,
+        locale="en-US",
+        timezone_id="America/New_York"
+    )
+
+    # 4. Подкладываем куки, если передан путь (например, из AI_INPUT)
+    if cookies_path:
+        load_cookies_if_exist(context, cookies_path)
+
+    return context
+
+
+# Пример использования (для дебага самого файла)
+if __name__ == "__main__":
+    # Локальный тест
+    ROOT_DIR = Path(__file__).parent.parent.resolve()
+    test_cookies = ROOT_DIR / "AI_INPUT" / "cookies.json"
+    
+    with sync_playwright() as p:
+        ctx = get_browser_context(p, headless=False, cookies_path=test_cookies)
+        page = ctx.new_page()
+        page.goto("https://bot.sannysoft.com/") # Хороший сайт для проверки детекта
+        page.wait_for_timeout(5000)
+        ctx.browser.close()
+
+--- app/config.py (НЕ МЕНЯТЬ) ---
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import os
+from pathlib import Path
+
+# =====================================================================
+# 1. ПУТИ К ПАПКАМ СТРУКТУРЫ (Абсолютные)
+# =====================================================================
+APP_DIR = Path(__file__).parent.resolve()
+ROOT_DIR = APP_DIR.parent.resolve()
+
+# Папки для работы с ИИ
+AI_INPUT_DIR = ROOT_DIR / "AI_INPUT"
+AI_OUTPUT_DIR = ROOT_DIR / "AI_OUTPUT"
+
+# Входные и выходные данные для скрипта
+INPUT_DIR = ROOT_DIR / "input"
+OUTPUT_DIR = ROOT_DIR / "output"
+
+# Файлы окружения и зависимостей
+COOKIES_FILE = AI_INPUT_DIR / "cookies.json"
+HEADERS_FILE = AI_INPUT_DIR / "headers.json"
+
+# Гарантируем, что рабочие папки проекта существуют
+INPUT_DIR.mkdir(parents=True, exist_ok=True)
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+
+# =====================================================================
+# 2. НАСТРОЙКИ ЗАПУСКА И БРАУЗЕРА (.env / Окружение)
+# =====================================================================
+
+# Режим работы браузера: "1" — без экрана, "0" — с экраном (дебаг)
+# Если переменная IS_DOCKER установлена, принудительно включаем headless
+IS_DOCKER = os.getenv("IS_DOCKER", "0") == "1"
+HEADLESS = os.getenv("HEADLESS", "1") == "1" or IS_DOCKER
+
+# Логирование и таймауты
+TIMEOUT = int(os.getenv("SCRAPER_TIMEOUT", "30"))  # в секундах
+RETRY_COUNT = int(os.getenv("SCRAPER_RETRY", "3"))
+
+# Настройки сети и прокси
+PROXY_URL = os.getenv("PROXY_URL", None)  # Формат: http://username:password@host:port
+
+
+# =====================================================================
+# 3. МАСКИРОВКА И КЛИЕНТСКИЕ ДАННЫЕ
+# =====================================================================
+
+# Реалистичный дефолтный User-Agent, если не передан кастомный в headers.json
+DEFAULT_USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/126.0.0.0 Safari/537.36"
+)
+
+
+# =====================================================================
+# 4. ТЕСТОВЫЙ ЗАПУСК ДЛЯ ПРОВЕРКИ ПУТЕЙ
+# =====================================================================
+if __name__ == "__main__":
+    print(f"[{__file__}] Проверка путей конфигурации:")
+    print(f"  Корень проекта (ROOT_DIR): {ROOT_DIR}")
+    print(f"  Папка вывода (OUTPUT_DIR): {OUTPUT_DIR}")
+    print(f"  Файл кук (COOKIES_FILE):   {COOKIES_FILE}")
+    print(f"  Режим Headless:            {HEADLESS}")
+    print(f"  Запуск в Docker:           {IS_DOCKER}")
+
+--- app/exporter.py (НЕ МЕНЯТЬ) ---
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import csv
+import json
+from typing import List, Dict, Any
+from app.config import OUTPUT_DIR
+
+def save_to_csv(data: List[Dict[str, Any]], filename: str) -> str:
+    """
+    Сохраняет список словарей в CSV файл.
+    Автоматически берет ключи первого словаря в качестве заголовков.
+    """
+    if not data:
+        print(f"[{__file__}] Предупреждение: Нет данных для сохранения в CSV.")
+        return ""
+
+    # Если расширение не указано, добавляем его
+    if not filename.endswith(".csv"):
+        filename += ".csv"
+
+    filepath = OUTPUT_DIR / filename
+    
+    # Берем заголовки из ключей первого элемента
+    fieldnames = list(data[0].keys())
+
+    try:
+        # encoding="utf-8-sig" нужен, чтобы Excel на Windows корректно читал кириллицу/эмодзи
+        with open(filepath, mode="w", encoding="utf-8-sig", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(data)
+            
+        print(f"[{__file__}] Данные успешно сохранены в CSV: {filepath.name} (Строк: {len(data)})")
+        return str(filepath)
+    except Exception as e:
+        print(f"[{__file__}] Ошибка при сохранении в CSV: {e}")
+        return ""
+
+def save_to_json(data: List[Dict[str, Any]], filename: str, indent: int = 4) -> str:
+    """
+    Сохраняет данные в формате JSON с красивыми отступами.
+    """
+    if not data:
+        print(f"[{__file__}] Предупреждение: Нет данных для сохранения в JSON.")
+        return ""
+
+    if not filename.endswith(".json"):
+        filename += ".json"
+
+    filepath = OUTPUT_DIR / filename
+
+    try:
+        with open(filepath, mode="w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=indent)
+            
+        print(f"[{__file__}] Данные успешно сохранены в JSON: {filepath.name}")
+        return str(filepath)
+    except Exception as e:
+        print(f"[{__file__}] Ошибка при сохранении в JSON: {e}")
+        return ""
+
+
+# Пример использования (для дебага самого файла)
+if __name__ == "__main__":
+    test_data = [
+        {"id": 1, "title": "Ноутбук", "price": 1200.50, "in_stock": True},
+        {"id": 2, "title": "Смартфон", "price": 550.00, "in_stock": False},
+    ]
+    print(f"[{__file__}] Запуск теста экспортера...")
+    save_to_csv(test_data, "test_products")
+    save_to_json(test_data, "test_products.json")
+
+--- app/utils.py (НЕ МЕНЯТЬ) ---
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import re
+import time
+import random
+from datetime import datetime
+
+def log_message(level: str, message: str) -> None:
+    """
+    Универсальный форматированный логгер для вывода в консоль.
+    Заменяет тяжелые библиотеки логирования простым и понятным для ИИ кодом.
+    """
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"[{timestamp}] [{level.upper()}] {message}")
+
+def random_delay(min_seconds: float = 1.0, max_seconds: float = 3.0) -> None:
+    """
+    Генерирует случайную паузу. Помогает имитировать поведение 
+    реального пользователя и обходить базовые лимиты запросов (Rate Limiting).
+    """
+    delay = random.uniform(min_seconds, max_seconds)
+    time.sleep(delay)
+
+def clean_price(price_string: str) -> float:
+    """
+    Утилита очистки строки цены (например, '$1,299.99' или '150.00 €') 
+    и конвертации её в чистое число с плавающей точкой (float).
+    Очень частый запрос от клиентов на Upwork.
+    """
+    if not price_string:
+        return 0.0
+        
+    try:
+        # Удаляем все пробельные символы
+        cleaned = re.sub(r"\s+", "", price_string)
+        # Оставляем только цифры, точки и запятые
+        cleaned = re.sub(r"[^\d.,]", "", cleaned)
+        
+        # Если в цене есть и точка, и запятая (например, 1,250.50)
+        if "," in cleaned and "." in cleaned:
+            # Если запятая идет первой, это разделитель тысяч (US стиль) -> просто убираем её
+            if cleaned.find(",") < cleaned.find("."):
+                cleaned = cleaned.replace(",", "")
+            # Если точка идет первой (EU стиль, например, 1.250,50) -> убираем точку, запятую меняем на точку
+            else:
+                cleaned = cleaned.replace(".", "").replace(",", ".")
+        # Если есть только запятая (EU стиль без копеек или с копейками через запятую: '150,50')
+        elif "," in cleaned and "." not in cleaned:
+            cleaned = cleaned.replace(",", ".")
+            
+        return float(cleaned)
+    except Exception:
+        # Если очистить не удалось, возвращаем 0.0, чтобы скрипт не падал
+        return 0.0
+
+
+# Пример использования (для дебага самого файла)
+if __name__ == "__main__":
+    print(f"[{__file__}] Тест утилит:")
+    
+    log_message("info", "Запуск теста очистки цен...")
+    
+    # Тестируем разные форматы валют, которые могут прилететь с сайтов
+    prices_to_test = ["$1,249.99", "350,00 €", " 1.500,75 руб ", "99"]
+    
+    for p in prices_to_test:
+        print(f"  Исходная: {p:<15} -> Результат: {clean_price(p)}")
+
+---
+
+# ТЕКУЩИЙ ШАБЛОН МОДУЛЯ
+
+Файл `app/parser.py` — перепиши его полностью под план проекта:
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+from typing import List, Dict, Any
+from bs4 import BeautifulSoup
+
+def parse_single_item(element) -> Dict[str, Any]:
+    """
+    Вспомогательная функция для парсинга одного конкретного элемента 
+    (например, одной карточки товара, одной строки таблицы).
+    Именно этот кусок ИИ будет переписывать под селекторы конкретного сайта.
+    """
+    item_data = {}
+    
+    try:
+        # --- Пример базовой логики (заменяется под ТЗ клиента) ---
+        # Находим название товара
+        title_node = element.select_one(".product-title, h1, h2")
+        item_data["title"] = title_node.get_text(strip=True) if title_node else None
+        
+        # Находим цену
+        price_node = element.select_one(".price, .amount")
+        item_data["price"] = price_node.get_text(strip=True) if price_node else None
+        
+        # Находим ссылку
+        link_node = element.select_one("a")
+        item_data["url"] = link_node.get("href") if link_node else None
+        # ---------------------------------------------------------
+        
+    except Exception as e:
+        print(f"[{__file__}] Ошибка при парсинге элемента: {e}")
+        
+    return item_data
+
+def parse_html_data(raw_contents: List[str]) -> List[Dict[str, Any]]:
+    """
+    Главная функция парсера. Принимает список сырых HTML-строк (страниц),
+    обрабатывает их через BeautifulSoup и собирает финальный массив словарей.
+    """
+    parsed_items = []
+
+    if not raw_contents:
+        print(f"[{__file__}] Предупреждение: Получен пустой список контента для парсинга.")
+        return parsed_items
+
+    for index, html_content in enumerate(raw_contents, start=1):
+        if not html_content:
+            continue
+            
+        try:
+            # Инициализируем BeautifulSoup для текущей страницы
+            soup = BeautifulSoup(html_content, "html.parser")
+            
+            # --- Логика поиска контейнеров (заменяется под ТЗ клиента) ---
+            # Например, ищем все карточки товаров на странице
+            items_containers = soup.select(".product-card, .item")
+            # ---------------------------------------------------------
+            
+            if not items_containers:
+                # Если кастомных контейнеров нет, можно спарсить страницу целиком как один элемент
+                single_item = parse_single_item(soup)
+                if single_item:
+                    parsed_items.append(single_item)
+                continue
+
+            # Парсим каждый найденный контейнер
+            for element in items_containers:
+                item_data = parse_single_item(element)
+                
+                # Добавляем элемент, только если он не пустой (есть хотя бы одно поле)
+                if any(item_data.values()):
+                    parsed_items.append(item_data)
+                    
+            print(f"[{__file__}] Страница {index}: Успешно спарсено элементов: {len(items_containers)}")
+            
+        except Exception as e:
+            print(f"[{__file__}] Ошибка при обработке страницы {index}: {e}")
+
+    print(f"[{__file__}] Всего извлечено элементов: {len(parsed_items)}")
+    return parsed_items
+
+
+# Пример использования (для дебага самого файла)
+if __name__ == "__main__":
+    print(f"[{__file__}] Запуск теста парсера...")
+    
+    # Фейковый HTML для проверки структуры
+    mock_html = """
+    <html>
+        <div class="product-card">
+            <h2 class="product-title"> Смартфон X </h2>
+            <span class="price"> $999 </span>
+            <a href="https://example.com/item1">Подробнее</a>
+        </div>
+        <div class="product-card">
+            <h2 class="product-title"> Наушники Y </h2>
+            <span class="price"> $150 </span>
+            <a href="https://example.com/item2">Подробнее</a>
+        </div>
+    </html>
+    """
+    
+    results = parse_html_data([mock_html])
+    print("Результат теста:", results)
+
+---
+
+# ЗАДАЧА
+
+Сгенерируй **полный рабочий код** для `app/parser.py` (модуль: **parser**).
+
+## Требования
+
+1. **Только функции** — без классов.
+2. **Один файл** — весь код модуля в одном ответе.
+3. **Следуй project_plan.md** — имена функций, сигнатуры, алгоритм.
+4. **Не трогай ядро** — `main.py` уже вызывает `fetch_page_data()` и `parse_html_data()`. Сохрани эти имена или обнови только если план явно требует другие.
+5. **Минимум зависимостей** — используй только то, что уже есть в проекте.
+6. **Обработка ошибок** — try/except на уровне страниц/элементов, не падай на одной ошибке.
+7. **Логирование** — `print(f"[{__file__}] ...")` как в шаблоне.
+
+## Если модуль = scraper
+
+- Отвечает **только** за сеть, навигацию, пагинацию, скролл, клики.
+- Возвращает `List[str]` — список сырого HTML (или JSON-строк).
+- Не парсит DOM — это задача parser.py.
+- Используй `app.config` для таймаутов и путей.
+- Используй `random_delay()` из `app.utils` между запросами.
+
+## Если модуль = parser
+
+- Отвечает **только** за извлечение данных из сырого контента.
+- Принимает `List[str]`, возвращает `List[Dict[str, Any]]`.
+- Используй BeautifulSoup для HTML.
+- Сохрани функцию `parse_single_item()` для парсинга одного элемента.
+- Поля результата — строго по project_plan.md.
+
+---
+
+# ФОРМАТ ОТВЕТА
+
+1. Кратко (3–5 строк): что делает модуль.
+2. Полный код файла `app/parser.py` в одном блоке:
+
+```python
+# полный код здесь
+```
+
+3. Как протестировать локально (1–2 команды).
+
+**ЗАПРЕЩЕНО:**
+- Писать код для других файлов.
+- Добавлять GUI, CLI, меню.
+- Добавлять функции, которых нет в project_plan.md.
+- Использовать классы.
+
+====================================================================================================
+ФАЙЛ: starter-project\AI_OUTPUT\final_prompt_for_ai.md
+====================================================================================================
+
+# ROLE
+
+Главная цель — выбрать самое простое, надежное и быстрое решение, полностью соответствующее требованиям клиента.
+
+Не усложняй проект без необходимости.
+
+Ты опытный Python Web Scraping Engineer с большим опытом выполнения проектов на Upwork.
+
+Твоя задача — сначала полностью проанализировать проект клиента и выбрать оптимальную стратегию разработки.
+
+На этом этапе ЗАПРЕЩЕНО писать код.
+Если тебе не хватает информации — сначала задай вопросы.
+
+---
+
+# PROJECT DESCRIPTION
+
+Ниже будет описание проекта клиента.
+
+
+
+--- ФАЙЛ: description.txt ---
+надо извлечданные из одной страницы:
+https://www.olx.ua/uk/transport/legkovye-avtomobili/
+
+название
+цена
+вид топлива
+
+
+--- ФАЙЛ: answers.txt ---
+формат вывода JSON
+надо только страницу 1
+...
+
+--- ФАЙЛ: cookies.json ---
+
+
+--- ФАЙЛ: headers.json ---
+
+
+--- СЖАТЫЙ HTML: page.html ---
+<div class="css-1sw7q4x" id="926825655">
+ <div class="css-ri9uxm">
+  <div class="css-hvzem4">
+   <div class="css-e59vz0">
+    <a class="css-1tqlkj0" href="/d/uk/obyavlenie/prodam-vaz-2104-inzhektor-ID10IRGT.html?search_reason=search%7Corganic">
+     <div class="css-11ow61k">
+      <div class="css-gl6djm">
+       <img class="css-8wsg1m" src="https://ireland.apollo.olxcdn.com:443/v1/files/j7i62vhov0t91-UA/image;s=216x152;q=50"/>
+      </div>
+     </div>
+     <div class="css-6gymc3">
+      <div class="css-1av34ht">
+       <div class="css-3xiokn">
+       </div>
+      </div>
+     </div>
+    </a>
+   </div>
+   <div class="css-ih6nf2">
+    <div class="css-u2ayx9">
+     <a class="css-1tqlkj0" href="/d/uk/obyavlenie/prodam-vaz-2104-inzhektor-ID10IRGT.html?search_reason=search%7Corganic">
+      <h4 class="css-wlcw7o">
+       Продам ваз 2104 инжектор
+      </h4>
+     </a>
+     <p class="css-61fb99">
+      51 165.64 грн.
+      <span class="css-zf56ej">
+       Договірна
+      </span>
+      <span class="css-zf56ej">
+      </span>
+     </p>
+    </div>
+    <div class="css-16y676b">
+     <div class="flex flex-wrap items-end gap-(--spacing50)">
+     </div>
+     <div class="css-1smnjed">
+     </div>
+    </div>
+    <div class="css-49upc6">
+     <p class="css-1453zif">
+      Самар - Сьогодні о 21:30
+     </p>
+     <div class="css-13vv2xi">
+      <span class="css-t4djs0">
+       <span class="css-h59g4b">
+        2007  150 тис.км.
+       </span>
+       <span class="css-h59g4b">
+        Механічна
+       </span>
+       <span class="css-h59g4b">
+        Газ / бензин
+       </span>
+      </span>
+     </div>
+    </div>
+    <button class="css-kmyhfy">
+     <div class="css-1iakee2">
+      Підписатися
+     </div>
+    </button>
+   </div>
+  </div>
+ </div>
+</div>
+
+
+---
+
+# AVAILABLE FILES
+
+При анализе могут быть приложены один или несколько файлов.
+
+Например:
+
+- description.txt
+- page.html
+- network.har
+- cookies.json
+- headers.json
+- response.json
+- screenshots
+- project_tree.txt
+- project_for_ai.txt
+
+Используй только те файлы, которые действительно были предоставлены.
+Не предполагай наличие отсутствующих файлов.
+
+---
+
+# YOUR TASK
+
+Выполни полный анализ проекта.
+Ответ должен состоять из следующих разделов.
+
+## 1. Краткое описание задачи
+
+Опиши своими словами, что хочет получить клиент.
+
+---
+
+## 2. Какой конечный результат нужен
+
+Например:
+
+- CSV
+- Excel
+- JSON
+- Database
+- API
+- изображения
+- PDF
+- другой формат
+
+---
+
+## 3. Как лучше решить задачу
+
+Если действительно требуется комбинация методов (например API + Playwright), выбери её и объясни почему.
+
+Например
+
+- requests
+- BeautifulSoup
+- Playwright
+- Scrapy
+- Selenium
+- API
+- комбинация нескольких методов
+
+Обязательно объясни почему.
+
+---
+
+## 4. Почему остальные варианты хуже
+
+Кратко объясни, почему ты НЕ рекомендуешь использовать остальные подходы.
+
+---
+
+## 5. Анализ сайта
+
+Определи насколько это возможно.
+
+Есть ли:
+
+- JavaScript Rendering
+- React
+- Vue
+- Angular
+- API
+- GraphQL
+- Infinite Scroll
+- Pagination
+- Login
+- Cookies
+- JWT
+- Bearer Token
+- CAPTCHA
+- Cloudflare
+- Rate Limits
+- Download Files
+- Upload Files
+- Lazy Loading
+- WebSocket
+- XHR/Fetch
+- Sitemap
+- robots.txt
+
+Если определить невозможно — так и напиши.
+
+---
+
+## 6. Что необходимо собрать до начала разработки
+
+Какие данные необходимо получить до начала разработки.
+
+Например
+
+- page.html
+- network.har
+- cookies
+- response.json
+- пример CSV
+- пример Excel
+- скриншоты
+- тестовый аккаунт
+- пример ожидаемого результата
+- образец выходного файла
+
+Если что-либо необходимо —
+перечисли это.
+
+---
+
+## 7. Возможные сложности
+
+Перечисли потенциальные проблемы.
+
+Например
+
+- блокировки
+- изменение HTML
+- скрытый API
+- динамическая загрузка
+- авторизация
+- ограничение скорости
+- большое количество страниц
+
+---
+
+## 8. Что нужно уточнить у клиента
+
+Если информации недостаточно —
+составь список вопросов клиенту.
+Не придумывай ответы самостоятельно.
+
+---
+
+## 9. Рекомендуемый стек технологий
+
+Укажи только основные технологии, которые будут использоваться.
+
+Например:
+
+- Python
+- Playwright
+- BeautifulSoup
+- requests
+- API
+
+Не перечисляй конкретные библиотеки для установки.
+
+Не составляй requirements.txt.
+
+
+---
+
+## 10. План разработки
+
+Разбей проект на логические этапы разработки.
+
+Каждый этап должен содержать:
+
+- цель;
+- ожидаемый результат;
+- зависимости (если есть).
+
+---
+
+## 11. Оценка сложности
+
+Оцени:
+
+- сложность (1–10);
+- время на разработки - (Estimation в часах)
+- вероятность блокировок;
+- вероятность необходимости использования браузера;
+- вероятность изменения сайта в будущем;
+- общую оценку риска.
+
+---
+
+## 12. Можно ли решить проще
+
+---
+Определи можно ли выполнить проект более простым способом.
+
+Например:
+
+API вместо HTML.
+Активно искать API в network.har или через консоль разработчика
+requests вместо Playwright.
+CSV вместо базы данных.
+Если существует более простое решение —
+обязательно предложи его.
+
+## 13. Итоговая рекомендация
+
+Кратко подведи итог.
+
+Ответь:
+
+- Какое решение рекомендуется.
+- Почему оно оптимально.
+- Что необходимо получить перед началом разработки.
+- Можно ли переходить к написанию кода или сначала нужно дождаться ответов клиента.
+
+
+# IMPORTANT RULES
+
+НЕ переходи к реализации.
+НЕ проектируй архитектуру классов.
+НЕ предлагай реализацию функций.
+НЕ предлагай  структуру каталогов.
+НЕ генерируй код.
+НЕ создавай Dockerfile.
+НЕ создавай requirements.txt.
+Не делай предположений, если информации недостаточно.
+Явно указывай уровень уверенности в своих выводах.
+
+# SELF-CHECK
+
+Перед отправкой ответа проверь:
+□ Я не написал код.
+□ Я не начал проектировать функции.
+□ Я выбрал наиболее подходящую технологию.
+□ Я перечислил возможные риски.
+□ Я указал, какой информации не хватает.
+□ Я сформировал список вопросов клиенту.
+□ Я предложил наиболее простое решение.
+□ Я не усложнил архитектуру без необходимости.
+Если хотя бы один пункт не выполнен — исправь ответ перед отправкой.
+
+====================================================================================================
+ФАЙЛ: starter-project\AI_OUTPUT\project_plan.md
+====================================================================================================
+
+Почему выбран именно этот способ
+Выбранный способ: HTML + requests + BeautifulSoup
+Почему
+
+Из предоставленного HTML видно, что все необходимые данные уже присутствуют в разметке карточек:
+
+название — внутри <h4>;
+цена — внутри <p>;
+вид топлива — один из <span> с характеристиками.
+
+Пустой network.har не позволяет подтвердить наличие внутреннего API, поэтому проектировать решение через API нельзя.
+
+Также отсутствуют признаки того, что для получения этих трех полей обязательно требуется выполнение JavaScript.
+
+Плюсы
+самая простая архитектура;
+минимальное количество зависимостей;
+быстро работает;
+легко тестировать по сохраненному HTML;
+полностью соответствует требованиям клиента.
+Минусы
+если OLX отдает неполный HTML обычным HTTP-запросом, потребуется переход на Playwright;
+CSS-классы у OLX могут изменяться.
+
+Уровень уверенности: высокий относительно парсинга HTML, средний относительно способа получения страницы.
+
+1. Полный поток данных
+URL
+    ↓
+requests
+    ↓
+HTML страницы
+    ↓
+parser.parse_listing(html)
+    ↓
+BeautifulSoup
+    ↓
+поиск карточек объявлений
+    ↓
+parse_single_item(card)
+    ↓
+dict
+    ↓
+list[dict]
+    ↓
+main.py
+    ↓
+exporter.save_to_csv()
+или
+exporter.save_to_json()
+
+Полный сценарий:
+
+Пользователь запускает main.py.
+main.py вызывает функцию получения HTML из scraper.py.
+scraper.py выполняет HTTP-запрос.
+Возвращает сырой HTML.
+main.py передает HTML в parser.py.
+parser.py извлекает все объявления.
+Возвращает list[dict].
+main.py передает данные в exporter.py.
+Экспортер сохраняет CSV или JSON.
+2. Проектирование app/scraper.py
+2.1 Интерфейс функций
+fetch_page(url)
+
+Назначение
+
+Получить HTML страницы.
+
+Принимает
+
+URL
+
+Возвращает
+
+HTML (str)
+либо None при ошибке.
+fetch_listing()
+
+Назначение
+
+Точка входа для получения списка объявлений.
+
+Функция:
+
+вызывает fetch_page();
+возвращает сырой HTML в main.py.
+
+Парсинг внутри нее не производится.
+
+2.2 Алгоритм обхода
+Пагинация
+
+По описанию клиента:
+
+извлечь данные из одной страницы.
+
+Следовательно:
+
+Пагинация отсутствует.
+
+Циклы по страницам проектировать не требуется.
+
+Поведение на странице
+
+При использовании requests:
+
+открыть URL;
+дождаться HTTP-ответа;
+вернуть HTML.
+
+Никаких:
+
+кликов;
+скроллов;
+раскрытия блоков;
+ожиданий элементов
+
+не требуется.
+
+Lazy Loading
+
+По HTML видно только ленивую загрузку изображений.
+
+Изображения клиенту не нужны.
+
+Следовательно:
+
+никаких дополнительных действий не требуется.
+
+Использование random_delay()
+
+Поскольку выполняется всего один запрос:
+
+использование необязательно.
+
+Допустимо вызвать один раз непосредственно перед выполнением HTTP-запроса, если это принято в существующем ядре проекта.
+
+3. Проектирование app/parser.py
+3.1 Интерфейс функций
+Функция	Назначение	Входные параметры	Возвращаемое значение
+parse_listing(html)	Разбирает HTML всей страницы, находит карточки объявлений	html: str	list[dict]
+parse_single_item(card)	Извлекает данные одной карточки	card: bs4.Tag	dict
+
+Других функций не требуется.
+
+3.2 Спецификация полей
+title
+
+Источник:
+
+<h4>
+
+Если отсутствует:
+
+None
+price
+
+Источник:
+
+<p class="...">
+
+Извлекается только основное значение цены.
+
+Текст "Договірна" игнорируется.
+
+После извлечения желательно использовать уже существующую функцию clean_price() из utils.py.
+
+Если цена отсутствует:
+
+None
+fuel_type
+
+Источник:
+
+последний элемент среди характеристик карточки.
+
+Пример:
+
+Газ / бензин
+
+Если поле отсутствует:
+
+None
+3.3 Финальная структура результата
+
+Один элемент:
+
+{
+    "title": "Продам ваз 2104 инжектор",
+    "price": 51165.64,
+    "fuel_type": "Газ / бензин"
+}
+
+Дополнительные поля не добавляются, так как клиент их не запрашивал.
+
+4. Обработка ошибок
+Сценарий	Действие
+Timeout	Выполнить ограниченное число повторных попыток (например, 2–3). При неудаче записать ошибку в лог и завершить обработку страницы.
+HTTP 403	Записать в лог и остановить выполнение. Это может означать блокировку.
+HTTP 404	Записать в лог и завершить работу.
+CAPTCHA	Записать в лог и остановить выполнение. Требуется ручное вмешательство.
+Ошибка соединения	Повторить запрос несколько раз. Затем завершить работу с сообщением в лог.
+Пустой HTML	Записать в лог и вернуть пустой список.
+Карточки не найдены	Вернуть пустой список без исключения.
+Не найдено название	Вернуть None.
+Не найдена цена	Вернуть None.
+Не найден вид топлива	Вернуть None.
+Изменился HTML	Записать предупреждение в лог. Не завершать обработку аварийно.
+5. Оценка рисков
+Cloudflare
+
+Неизвестно.
+
+Login
+
+Не требуется.
+
+Rate Limiting
+
+Возможен.
+
+CAPTCHA
+
+Неизвестно.
+
+Infinite Scroll
+
+Не обнаружен по предоставленным данным.
+
+Shadow DOM
+
+Не обнаружен.
+
+iframe
+
+Не обнаружен.
+
+WebSocket
+
+Неизвестно.
+
+GraphQL
+
+Неизвестно.
+
+Частые изменения DOM
+
+Средний риск.
+
+OLX использует автоматически генерируемые CSS-классы.
+
+При реализации желательно опираться не только на классы, но и на более устойчивую структуру карточки, где это возможно.
+
+6. Порядок реализации
+1. parser.py
+
+Почему первым:
+
+полностью независим от сети;
+можно тестировать на уже предоставленном page.html;
+быстрее выявляются ошибки селекторов.
+2. scraper.py
+
+После готовности парсера.
+
+Причина:
+
+сразу можно проверить получение HTML;
+сетевая часть минимальна.
+3. Интеграция
+
+Подключение модулей к существующему main.py.
+
+Изменений ядра не требуется.
+
+4. Проверка экспорта
+
+Проверить корректность сохранения через существующий exporter.py.
+
+5. Финальное тестирование
+
+Проверить:
+
+количество объявлений;
+заполненность полей;
+отсутствие ошибок при отсутствии отдельных элементов.
+Что останется неизвестным
+
+На основании предоставленных материалов невозможно определить:
+
+существует ли внутренний API;
+требуется ли JavaScript для формирования итогового HTML;
+есть ли Cloudflare;
+есть ли CAPTCHA;
+используется ли пагинация в реальной задаче (клиент указал только одну страницу);
+конечный формат экспорта (CSV/JSON/Excel);
+необходимы ли дополнительные поля помимо трех указанных.
+
+ПРЕДПОЛОЖЕНИЕ: обычный HTTP-запрос возвращает HTML с карточками объявлений в том виде, который был предоставлен в page.html. Это необходимо подтвердить перед реализацией.
+
+Краткое резюме
+
+Выбранная технология
+
+Python
+requests
+BeautifulSoup
+
+Основные функции scraper.py
+
+fetch_page(url) — получение HTML страницы.
+fetch_listing() — получение HTML страницы списка объявлений.
+
+Основные функции parser.py
+
+parse_listing(html) — извлечение всех карточек объявлений.
+parse_single_item(card) — извлечение названия, цены и вида топлива из одной карточки.
+
+Итоговая структура данных
+
+{
+    "title": "Продам ваз 2104 инжектор",
+    "price": 51165.64,
+    "fuel_type": "Газ / бензин"
+}
+
+Главные риски проекта
+
+отсутствие рабочего network.har, из-за чего нельзя подтвердить наличие API;
+возможная защита OLX (403, CAPTCHA, Cloudflare);
+изменение структуры HTML и CSS-классов;
+вероятность того, что в реальном запросе потребуется браузерная автоматизация, если HTML отличается от предоставленного образца.
+
+====================================================================================================
+ФАЙЛ: starter-project\AI_OUTPUT\Я бы сделал еще одну папку.txt
+====================================================================================================
+
+Это вообще то, чего нет почти ни у кого.
+
+AI_OUTPUT/
+
+После каждого общения с ИИ сохранять
+
+AI_OUTPUT/
+
+analysis.md
+
+generated_code.md
+
+debug.md
+
+review.md
+
+Через год у тебя будет сотни решений.
+
+Можно будет искать
+
+Cloudflare
+
+Playwright
+
+Captcha
+
+CSV
+
+JSON
+
+
+И находить, как ты уже решал похожую задачу.
+
+====================================================================================================
+ФАЙЛ: starter-project\app\browser.py
+====================================================================================================
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import os
+import json
+from pathlib import Path
+from playwright.sync_api import sync_playwright, Browser, BrowserContext
+
+def load_cookies_if_exist(context: BrowserContext, cookies_path: Path) -> None:
+    """
+    Загружает куки в контекст браузера, если файл существует.
+    """
+    if cookies_path.exists() and cookies_path.stat().st_size > 0:
+        try:
+            with open(cookies_path, "r", encoding="utf-8") as f:
+                cookies = json.load(f)
+                context.add_cookies(cookies)
+            print(f"[{__file__}] Куки успешно загружены из {cookies_path.name}")
+        except Exception as e:
+            print(f"[{__file__}] Ошибка при загрузке кук: {e}")
+
+def get_browser_context(
+    playwright_instance, 
+    headless: bool = None, 
+    user_agent: str = None,
+    cookies_path: Path = None
+) -> BrowserContext:
+    """
+    Инициализирует настроенный браузер и возвращает изолированный контекст.
+    """
+    # 1. Автоматически определяем режим (Docker/переменные окружения или дефолт)
+    # Если headless не передан, смотрим в .env или ставим True, если мы в Docker
+    if headless is None:
+        headless = os.getenv("HEADLESS", "0") == "1" or os.getenv("IS_DOCKER") == "1"
+
+    # Дефолтный качественный User-Agent, если не передан кастомный
+    if not user_agent:
+        user_agent = (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "Anonymized/Chrome/120.0.0.0 Safari/537.36"
+        )
+
+    print(f"[{__file__}] Запуск Chromium (Headless={headless})...")
+
+    # 2. Запуск браузера с флагами против падений в Docker
+    browser: Browser = playwright_instance.chromium.launch(
+        headless=headless,
+        args=[
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-blink-features=AutomationControlled" # Скрывает автоматизацию
+        ]
+    )
+
+    # 3. Создание контекста с маскировкой параметров
+    context: BrowserContext = browser.new_context(
+        user_agent=user_agent,
+        viewport={"width": 1920, "height": 1080},
+        device_scale_factor=1,
+        is_mobile=False,
+        has_touch=False,
+        locale="en-US",
+        timezone_id="America/New_York"
+    )
+
+    # 4. Подкладываем куки, если передан путь (например, из AI_INPUT)
+    if cookies_path:
+        load_cookies_if_exist(context, cookies_path)
+
+    return context
+
+
+# Пример использования (для дебага самого файла)
+if __name__ == "__main__":
+    # Локальный тест
+    ROOT_DIR = Path(__file__).parent.parent.resolve()
+    test_cookies = ROOT_DIR / "AI_INPUT" / "cookies.json"
+    
+    with sync_playwright() as p:
+        ctx = get_browser_context(p, headless=False, cookies_path=test_cookies)
+        page = ctx.new_page()
+        page.goto("https://bot.sannysoft.com/") # Хороший сайт для проверки детекта
+        page.wait_for_timeout(5000)
+        ctx.browser.close()
+
+====================================================================================================
+ФАЙЛ: starter-project\app\config.py
+====================================================================================================
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import os
+from pathlib import Path
+
+# =====================================================================
+# 1. ПУТИ К ПАПКАМ СТРУКТУРЫ (Абсолютные)
+# =====================================================================
+APP_DIR = Path(__file__).parent.resolve()
+ROOT_DIR = APP_DIR.parent.resolve()
+
+# Папки для работы с ИИ
+AI_INPUT_DIR = ROOT_DIR / "AI_INPUT"
+AI_OUTPUT_DIR = ROOT_DIR / "AI_OUTPUT"
+
+# Входные и выходные данные для скрипта
+INPUT_DIR = ROOT_DIR / "input"
+OUTPUT_DIR = ROOT_DIR / "output"
+
+# Файлы окружения и зависимостей
+COOKIES_FILE = AI_INPUT_DIR / "cookies.json"
+HEADERS_FILE = AI_INPUT_DIR / "headers.json"
+
+# Гарантируем, что рабочие папки проекта существуют
+INPUT_DIR.mkdir(parents=True, exist_ok=True)
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+
+# =====================================================================
+# 2. НАСТРОЙКИ ЗАПУСКА И БРАУЗЕРА (.env / Окружение)
+# =====================================================================
+
+# Режим работы браузера: "1" — без экрана, "0" — с экраном (дебаг)
+# Если переменная IS_DOCKER установлена, принудительно включаем headless
+IS_DOCKER = os.getenv("IS_DOCKER", "0") == "1"
+HEADLESS = os.getenv("HEADLESS", "1") == "1" or IS_DOCKER
+
+# Логирование и таймауты
+TIMEOUT = int(os.getenv("SCRAPER_TIMEOUT", "30"))  # в секундах
+RETRY_COUNT = int(os.getenv("SCRAPER_RETRY", "3"))
+
+# Настройки сети и прокси
+PROXY_URL = os.getenv("PROXY_URL", None)  # Формат: http://username:password@host:port
+
+
+# =====================================================================
+# 3. МАСКИРОВКА И КЛИЕНТСКИЕ ДАННЫЕ
+# =====================================================================
+
+# Реалистичный дефолтный User-Agent, если не передан кастомный в headers.json
+DEFAULT_USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/126.0.0.0 Safari/537.36"
+)
+
+
+# =====================================================================
+# 4. ТЕСТОВЫЙ ЗАПУСК ДЛЯ ПРОВЕРКИ ПУТЕЙ
+# =====================================================================
+if __name__ == "__main__":
+    print(f"[{__file__}] Проверка путей конфигурации:")
+    print(f"  Корень проекта (ROOT_DIR): {ROOT_DIR}")
+    print(f"  Папка вывода (OUTPUT_DIR): {OUTPUT_DIR}")
+    print(f"  Файл кук (COOKIES_FILE):   {COOKIES_FILE}")
+    print(f"  Режим Headless:            {HEADLESS}")
+    print(f"  Запуск в Docker:           {IS_DOCKER}")
+
+====================================================================================================
+ФАЙЛ: starter-project\app\exporter.py
+====================================================================================================
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import csv
+import json
+from typing import List, Dict, Any
+from app.config import OUTPUT_DIR
+
+def save_to_csv(data: List[Dict[str, Any]], filename: str) -> str:
+    """
+    Сохраняет список словарей в CSV файл.
+    Автоматически берет ключи первого словаря в качестве заголовков.
+    """
+    if not data:
+        print(f"[{__file__}] Предупреждение: Нет данных для сохранения в CSV.")
+        return ""
+
+    # Если расширение не указано, добавляем его
+    if not filename.endswith(".csv"):
+        filename += ".csv"
+
+    filepath = OUTPUT_DIR / filename
+    
+    # Берем заголовки из ключей первого элемента
+    fieldnames = list(data[0].keys())
+
+    try:
+        # encoding="utf-8-sig" нужен, чтобы Excel на Windows корректно читал кириллицу/эмодзи
+        with open(filepath, mode="w", encoding="utf-8-sig", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(data)
+            
+        print(f"[{__file__}] Данные успешно сохранены в CSV: {filepath.name} (Строк: {len(data)})")
+        return str(filepath)
+    except Exception as e:
+        print(f"[{__file__}] Ошибка при сохранении в CSV: {e}")
+        return ""
+
+def save_to_json(data: List[Dict[str, Any]], filename: str, indent: int = 4) -> str:
+    """
+    Сохраняет данные в формате JSON с красивыми отступами.
+    """
+    if not data:
+        print(f"[{__file__}] Предупреждение: Нет данных для сохранения в JSON.")
+        return ""
+
+    if not filename.endswith(".json"):
+        filename += ".json"
+
+    filepath = OUTPUT_DIR / filename
+
+    try:
+        with open(filepath, mode="w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=indent)
+            
+        print(f"[{__file__}] Данные успешно сохранены в JSON: {filepath.name}")
+        return str(filepath)
+    except Exception as e:
+        print(f"[{__file__}] Ошибка при сохранении в JSON: {e}")
+        return ""
+
+
+# Пример использования (для дебага самого файла)
+if __name__ == "__main__":
+    test_data = [
+        {"id": 1, "title": "Ноутбук", "price": 1200.50, "in_stock": True},
+        {"id": 2, "title": "Смартфон", "price": 550.00, "in_stock": False},
+    ]
+    print(f"[{__file__}] Запуск теста экспортера...")
+    save_to_csv(test_data, "test_products")
+    save_to_json(test_data, "test_products.json")
+
+====================================================================================================
+ФАЙЛ: starter-project\app\main.py
+====================================================================================================
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent.resolve()))  # Добавляет starter-project в пути Python
+from playwright.sync_api import sync_playwright
+
+from app.config import COOKIES_FILE
+from app.browser import get_browser_context
+from app.scraper import fetch_page_data
+from app.parser import parse_html_data
+from app.exporter import save_to_csv, save_to_json
+
+def main() -> None:
+    """
+    Главная точка входа. Управляет жизненным циклом парсера.
+    """
+    print("=" * 70)
+    print(f"[{__file__}] ЗАПУСК ПАРСЕРА")
+    print("=" * 70)
+
+    # Инициализируем хранилище для собранных данных
+    scraped_results = []
+
+    try:
+        # 1. Запуск контекста автоматизации (Playwright)
+        with sync_playwright() as playwright:
+            
+            # Получаем настроенный контекст браузера (переменные подтянутся из config)
+            context = get_browser_context(
+                playwright_instance=playwright,
+                cookies_path=COOKIES_FILE
+            )
+            
+            # 2. Сбор данных (Scraping)
+            # Передаем контекст браузера в scraper.py для обхода страниц
+            raw_pages_content = fetch_page_data(context)
+            
+            # Закрываем браузер сразу, как только закончили сетевую работу
+            context.browser.close()
+            print(f"[{__file__}] Браузер успешно закрыт.")
+
+            # 3. Обработка данных (Parsing)
+            # Передаем собранный HTML/JSON контент в parser.py для извлечения полей
+            if raw_pages_content:
+                print(f"[{__file__}] Начало парсинга контента...")
+                scraped_results = parse_html_data(raw_pages_content)
+            else:
+                print(f"[{__file__}] Критическая ошибка: Нечего парсить (список страниц пуст).")
+                sys.exit(1)
+
+        # 4. Экспорт результатов (Export)
+        if scraped_results:
+            print(f"[{__file__}] Экспорт данных (Всего элементов: {len(scraped_results)})...")
+            
+            # Сохраняем в оба формата (на Upwork клиенты любят иметь выбор)
+            save_to_csv(scraped_results, "output_results.csv")
+            save_to_json(scraped_results, "output_results.json")
+            
+            print("=" * 70)
+            print(f"[{__file__}] РАБОТА ПОЛНОСТЬЮ ЗАВЕРШЕНА УСПЕШНО")
+            print("=" * 70)
+        else:
+            print(f"[{__file__}] Предупреждение: Парсер вернул пустой результат. Файлы не созданы.")
+
+    except KeyError as ke:
+        print(f"[{__file__}] Ошибка конфигурации или структуры: {ke}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"[{__file__}] Критический сбой в главном потоке: {e}")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
+
+====================================================================================================
+ФАЙЛ: starter-project\app\parser.py
+====================================================================================================
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+from typing import List, Dict, Any
+from bs4 import BeautifulSoup, Tag
+from app.utils import clean_price, log_message
+
+
+def parse_single_item(card: Tag) -> Dict[str, Any]:
+    """
+    Извлекает данные одной карточки объявления OLX (название, цену и вид топлива).
+    
+    Args:
+        card (Tag): Объект BeautifulSoup Tag, представляющий контейнер карточки.
+
+    Returns:
+        Dict[str, Any]: Словарь со структурированными данными объявления.
+    """
+    # 1. Извлечение названия (находится внутри <h4>)
+    title_element = card.find("h4")
+    title = title_element.get_text(strip=True) if title_element else None
+
+    # 2. Извлечение цены (находится внутри <p data-testid="ad-price">)
+    price = None
+    price_element = card.find("p", {"data-testid": "ad-price"})
+    if price_element:
+        # Получаем полный текст элемента цены
+        raw_price_text = price_element.get_text(strip=True)
+        
+        # Исключаем текст "Договірна", если он присутствует в блоке
+        contractual_element = price_element.find("span", text=lambda t: t and "Договірна" in t)
+        if contractual_element:
+            contractual_text = contractual_element.get_text(strip=True)
+            raw_price_text = raw_price_text.replace(contractual_text, "")
+        
+        # Очищаем и конвертируем цену в float через утилиту ядра проекта
+        if raw_price_text.strip():
+            price = clean_price(raw_price_text)
+
+    # 3. Извлечение вида топлива 
+    # В разметке OLX характеристики лежат в span элементах. Вид топлива — последний в группе.
+    fuel_type = None
+    param_container = card.find("div", {"color": "text-global-secondary"})
+    if param_container:
+        # Находим все span элементы с атрибутом data-nx-name="P5", содержащие текстовые параметры
+        param_spans = param_container.find_all("span", {"data-nx-name": "P5"})
+        if param_spans:
+            # Вид топлива является последней характеристикой в карточке
+            last_param_text = param_spans[-1].get_text(strip=True)
+            if last_param_text:
+                fuel_type = last_param_text
+
+    return {
+        "title": title,
+        "price": price,
+        "fuel_type": fuel_type
+    }
+
+
+def parse_html_data(raw_pages_content: List[str]) -> List[Dict[str, Any]]:
+    """
+    Разбирает HTML всей страницы или списка страниц, находит карточки объявлений 
+    и собирает по ним структурированную информацию.
+    
+    Args:
+        raw_pages_content (List[str]): Список строк, содержащих сырой HTML-код страниц.
+
+    Returns:
+        List[Dict[str, Any]]: Полный список собранных объявлений.
+    """
+    parsed_items = []
+    
+    if not raw_pages_content:
+        log_message("warning", "Получен пустой контент для парсинга HTML.")
+        return parsed_items
+
+    for page_index, html_content in enumerate(raw_pages_content):
+        if not html_content:
+            continue
+            
+        soup = BeautifulSoup(html_content, "html.parser")
+        
+        # Поиск карточек по устойчивому атрибуту data-testid="l-card"
+        cards = soup.find_all("div", {"data-testid": "l-card"})
+        
+        if not cards:
+            log_message("warning", f"На странице {page_index + 1} карточки объявлений не найдены.")
+            continue
+            
+        log_message("info", f"Страница {page_index + 1}: Найдено карточек для обработки: {len(cards)}")
+        
+        for card in cards:
+            try:
+                item_data = parse_single_item(card)
+                # Добавляем элемент, только если удалось извлечь хотя бы одно ключевое поле
+                if item_data["title"] or item_data["price"] or item_data["fuel_type"]:
+                    parsed_items.append(item_data)
+                else:
+                    log_message("warning", "Пропущена пустая или невалидная карточка объявления.")
+            except Exception as e:
+                log_message("error", f"Ошибка при парсинге отдельной карточки: {e}")
+                # Не прерываем общий цикл, если одна карточка вызвала сбой
+                continue
+
+    log_message("info", f"Парсинг успешно завершен. Всего собрано элементов: {len(parsed_items)}")
+    return parsed_items
+
+====================================================================================================
+ФАЙЛ: starter-project\app\scraper.py
+====================================================================================================
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import os
+from typing import List
+from playwright.sync_api import BrowserContext
+from app.config import TIMEOUT
+
+def fetch_page_data(context: BrowserContext) -> List[str]:
+    """
+    Загружает HTML-контент целевой страницы OLX, используя предоставленный
+    контекст браузера Playwright.
+
+    Args:
+        context (BrowserContext): Инициализированный контекст браузера Playwright.
+
+    Returns:
+        List[str]: Список, содержащий строку с исходным HTML-кодом страницы.
+    """
+    url = "https://www.olx.ua/uk/transport/legkovye-avtomobili/"
+    print(f"[{__file__}] Переход по URL: {url}")
+    
+    raw_pages_content = []
+    
+    try:
+        # Создаем новую страницу в переданном контексте
+        page = context.new_page()
+        
+        # Устанавливаем таймаут из конфигурационного файла (переводим в миллисекунды)
+        page.set_default_timeout(TIMEOUT * 1000)
+        
+        # Выполняем переход на целевую страницу
+        response = page.goto(url, wait_until="domcontentloaded")
+        
+        if response and response.status >= 400:
+            print(f"[{__file__}] Ошибка: Сервер вернул HTTP-статус {response.status}")
+            return raw_pages_content
+
+        # Ожидаем появления хотя бы одной карточки объявления для гарантии рендеринга данных
+        try:
+            page.wait_for_selector('div[data-testid="l-card"]', timeout=10000)
+        except Exception:
+            print(f"[{__file__}] Предупреждение: Селектор карточек не обнаружен. Возможно структура изменилась.")
+
+        # Извлекаем финальное HTML-содержимое страницы
+        html_content = page.content()
+        
+        if html_content and len(html_content.strip()) > 0:
+            raw_pages_content.append(html_content)
+            print(f"[{__file__}] Успешно получен HTML-контент страницы ({len(html_content)} символов).")
+        else:
+            print(f"[{__file__}] Предупреждение: Получен пустой HTML со страницы.")
+            
+    except Exception as e:
+        print(f"[{__file__}] Ошибка при получении страницы через Playwright: {e}")
+        
+    return raw_pages_content
+
+====================================================================================================
+ФАЙЛ: starter-project\app\utils.py
+====================================================================================================
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import re
+import time
+import random
+from datetime import datetime
+
+def log_message(level: str, message: str) -> None:
+    """
+    Универсальный форматированный логгер для вывода в консоль.
+    Заменяет тяжелые библиотеки логирования простым и понятным для ИИ кодом.
+    """
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"[{timestamp}] [{level.upper()}] {message}")
+
+def random_delay(min_seconds: float = 1.0, max_seconds: float = 3.0) -> None:
+    """
+    Генерирует случайную паузу. Помогает имитировать поведение 
+    реального пользователя и обходить базовые лимиты запросов (Rate Limiting).
+    """
+    delay = random.uniform(min_seconds, max_seconds)
+    time.sleep(delay)
+
+def clean_price(price_string: str) -> float:
+    """
+    Утилита очистки строки цены (например, '$1,299.99' или '150.00 €') 
+    и конвертации её в чистое число с плавающей точкой (float).
+    Очень частый запрос от клиентов на Upwork.
+    """
+    if not price_string:
+        return 0.0
+        
+    try:
+        # Удаляем все пробельные символы
+        cleaned = re.sub(r"\s+", "", price_string)
+        # Оставляем только цифры, точки и запятые
+        cleaned = re.sub(r"[^\d.,]", "", cleaned)
+        
+        # Если в цене есть и точка, и запятая (например, 1,250.50)
+        if "," in cleaned and "." in cleaned:
+            # Если запятая идет первой, это разделитель тысяч (US стиль) -> просто убираем её
+            if cleaned.find(",") < cleaned.find("."):
+                cleaned = cleaned.replace(",", "")
+            # Если точка идет первой (EU стиль, например, 1.250,50) -> убираем точку, запятую меняем на точку
+            else:
+                cleaned = cleaned.replace(".", "").replace(",", ".")
+        # Если есть только запятая (EU стиль без копеек или с копейками через запятую: '150,50')
+        elif "," in cleaned and "." not in cleaned:
+            cleaned = cleaned.replace(",", ".")
+            
+        return float(cleaned)
+    except Exception:
+        # Если очистить не удалось, возвращаем 0.0, чтобы скрипт не падал
+        return 0.0
+
+
+# Пример использования (для дебага самого файла)
+if __name__ == "__main__":
+    print(f"[{__file__}] Тест утилит:")
+    
+    log_message("info", "Запуск теста очистки цен...")
+    
+    # Тестируем разные форматы валют, которые могут прилететь с сайтов
+    prices_to_test = ["$1,249.99", "350,00 €", " 1.500,75 руб ", "99"]
+    
+    for p in prices_to_test:
+        print(f"  Исходная: {p:<15} -> Результат: {clean_price(p)}")
+
+====================================================================================================
+ФАЙЛ: starter-project\docker-compose.yml
+====================================================================================================
+
+
+
+====================================================================================================
+ФАЙЛ: starter-project\Dockerfile
+====================================================================================================
+
+
+
+====================================================================================================
+ФАЙЛ: starter-project\docs\здесь пилим документацию.txt
+====================================================================================================
+
+
+    architecture.md
+
+    workflow.md
+
+    ai_rules.md
+
+    roadmap.md
+
+    ideas.md
+
+====================================================================================================
+ФАЙЛ: starter-project\output\output_results.csv
+====================================================================================================
+
+﻿title,price,fuel_type
+Уаз 452 дизельний,0.0,Дизель
+Продам JCB на полном боевом ходу,0.0,Дизель
+Продам BMW x5 e53.,0.0,Дизель
+"Renault Laguna 2,нерастаможенная",0.0,Бензин
+Продам bmw 116 в хорошем состоянии,0.0,Газ / бензин
+Renault Scenic-megane 1.6 газ 1700$ переоформлення. Терміново!),0.0,Газ / бензин
+Skoda Octavia 1.9 TDI,60000.0,Дизель
+Ваз 21099 в хорошем состояние,0.0,Бензин
+"Продаж Хонда Аккорд 2,4газ бензин",170000.0,Газ / бензин
+Продам автоболиль в хорошем состоянии,0.0,Газ / бензин
+Авто продам мерседес бенц 2002 бус,115000.0,Дизель
+Ваз 2199 газ бензин,49500.0,Газ / бензин
+BMW E39 2.5 Бензин хороший стан,0.0,Бензин
+Volkswagen Touareg  CR  3.0 TFSI  2018р,0.0,Бензин
+"Skoda Octavia A5,2010,один власник,авто у Львові.",0.0,Дизель
+Продам Ford Fusion 2015 2.5 л газ/бензин,0.0,Газ / бензин
+Продам AVEO/ ZAZ vida 2014,0.0,Газ / бензин
+Volkswagen Golf 5 (з газом),0.0,Газ / бензин
+Opel Vektra 1.6 Бензин 1993 року авто машина в хорошому стані Опель,0.0,Бензин
+Продам ВАЗ 2110 16 кл,0.0,Газ / бензин
+Продам BMW 7 E65 3.0 дизель Акпп,0.0,Дизель
+Продам Mazda CX50 2025 року пробіг 3тис/км,0.0,Бензин
+Возможно расчёт на карту… Газ- бензин..Сел поехал,85000.0,Газ / бензин
+Продам Skoda Fabia 2013 р. 1.4 газ-бенз,0.0,Бензин
+Продам opel vectra c на автомате,0.0,Газ / бензин
+Продам авто Geelly Emgrand,116000.0,Газ / бензин
+Porsche Cayenne 2012,0.0,Дизель
+Mercedes Sprinter 907  довга база,0.0,Дизель
+"BMW e 46  в хорошем техническом состоянии , продажа срочная торг уместен",0.0,Газ / бензин
+Продам Фольксваген б5.1.9tdi 1997г.,0.0,Дизель
+Fiat Doblo Оригінальний Пасажир ! 2007р | Дизель-TDI,0.0,Дизель
+Prado 4.0 в идеальном состоянии!,0.0,Газ / бензин
+Продам  Фольксваген пасат,170000.0,Бензин
+"Продам Mitsubishi Outlander 2007 у хорошому технічному та доглянутому стані. 3.0 V6  автомат  LPG (вписаний) Пробіг 165 000 км — чесний, не скручений.",0.0,Газ / бензин
+Продам авто БМВ х3 ф25 2017рік,0.0,Бензин
+Продам рено доккер,0.0,Дизель
+BMW E65 730D M57,0.0,Дизель
+"Mazda 6 gg 2.0 дизель, Максимальна комплектація",207000.0,Дизель
+Nissan Terrano II 2.7 TDI 4x4 ТОРГ/ ОБМІН,0.0,Дизель
+Продам авто Volkswagen TOUAREG 2016,0.0,Дизель
+Renault kadjar 2021р дизель 1.5 dci,0.0,Дизель
+Продам надійний та економний Volkswagen Passat B5+ 2003 року випуску.,0.0,Дизель
+Chevrolet Lacetti 1.8 Газ 2007 Универсал,0.0,Газ / бензин
+Свіжопригнаний VW Тауран 1.9ТДІ не розмитнений у Києві,0.0,Дизель
+В продаже Sandero 1.6,0.0,Бензин
+Продам Getz на газу (автомат),0.0,Газ / бензин
+"Citroen Berlingo, пасажир 5 місць, рідна фарба, 12 р.в 1.6 бензин",0.0,Бензин
+Продам авто на полном ходу,0.0,Дизель
+Рестайлінг. АВТОМАТ. VW Touran 2007  2.0TDI  нерозмитнений в Києві,0.0,Дизель
+Продам форд транзит оригинальный пасажир 8+1 TREND,0.0,Дизель
+Продам шкоду фабію на автоматі,0.0,Газ / бензин
+dacia Logan mcv  1.5 dci 2011,0.0,Дизель
+
+====================================================================================================
+ФАЙЛ: starter-project\output\output_results.json
+====================================================================================================
+
+[
+    {
+        "title": "Уаз 452 дизельний",
+        "price": 0.0,
+        "fuel_type": "Дизель"
+    },
+    {
+        "title": "Продам JCB на полном боевом ходу",
+        "price": 0.0,
+        "fuel_type": "Дизель"
+    },
+    {
+        "title": "Продам BMW x5 e53.",
+        "price": 0.0,
+        "fuel_type": "Дизель"
+    },
+    {
+        "title": "Renault Laguna 2,нерастаможенная",
+        "price": 0.0,
+        "fuel_type": "Бензин"
+    },
+    {
+        "title": "Продам bmw 116 в хорошем состоянии",
+        "price": 0.0,
+        "fuel_type": "Газ / бензин"
+    },
+    {
+        "title": "Renault Scenic-megane 1.6 газ 1700$ переоформлення. Терміново!)",
+        "price": 0.0,
+        "fuel_type": "Газ / бензин"
+    },
+    {
+        "title": "Skoda Octavia 1.9 TDI",
+        "price": 60000.0,
+        "fuel_type": "Дизель"
+    },
+    {
+        "title": "Ваз 21099 в хорошем состояние",
+        "price": 0.0,
+        "fuel_type": "Бензин"
+    },
+    {
+        "title": "Продаж Хонда Аккорд 2,4газ бензин",
+        "price": 170000.0,
+        "fuel_type": "Газ / бензин"
+    },
+    {
+        "title": "Продам автоболиль в хорошем состоянии",
+        "price": 0.0,
+        "fuel_type": "Газ / бензин"
+    },
+    {
+        "title": "Авто продам мерседес бенц 2002 бус",
+        "price": 115000.0,
+        "fuel_type": "Дизель"
+    },
+    {
+        "title": "Ваз 2199 газ бензин",
+        "price": 49500.0,
+        "fuel_type": "Газ / бензин"
+    },
+    {
+        "title": "BMW E39 2.5 Бензин хороший стан",
+        "price": 0.0,
+        "fuel_type": "Бензин"
+    },
+    {
+        "title": "Volkswagen Touareg  CR  3.0 TFSI  2018р",
+        "price": 0.0,
+        "fuel_type": "Бензин"
+    },
+    {
+        "title": "Skoda Octavia A5,2010,один власник,авто у Львові.",
+        "price": 0.0,
+        "fuel_type": "Дизель"
+    },
+    {
+        "title": "Продам Ford Fusion 2015 2.5 л газ/бензин",
+        "price": 0.0,
+        "fuel_type": "Газ / бензин"
+    },
+    {
+        "title": "Продам AVEO/ ZAZ vida 2014",
+        "price": 0.0,
+        "fuel_type": "Газ / бензин"
+    },
+    {
+        "title": "Volkswagen Golf 5 (з газом)",
+        "price": 0.0,
+        "fuel_type": "Газ / бензин"
+    },
+    {
+        "title": "Opel Vektra 1.6 Бензин 1993 року авто машина в хорошому стані Опель",
+        "price": 0.0,
+        "fuel_type": "Бензин"
+    },
+    {
+        "title": "Продам ВАЗ 2110 16 кл",
+        "price": 0.0,
+        "fuel_type": "Газ / бензин"
+    },
+    {
+        "title": "Продам BMW 7 E65 3.0 дизель Акпп",
+        "price": 0.0,
+        "fuel_type": "Дизель"
+    },
+    {
+        "title": "Продам Mazda CX50 2025 року пробіг 3тис/км",
+        "price": 0.0,
+        "fuel_type": "Бензин"
+    },
+    {
+        "title": "Возможно расчёт на карту… Газ- бензин..Сел поехал",
+        "price": 85000.0,
+        "fuel_type": "Газ / бензин"
+    },
+    {
+        "title": "Продам Skoda Fabia 2013 р. 1.4 газ-бенз",
+        "price": 0.0,
+        "fuel_type": "Бензин"
+    },
+    {
+        "title": "Продам opel vectra c на автомате",
+        "price": 0.0,
+        "fuel_type": "Газ / бензин"
+    },
+    {
+        "title": "Продам авто Geelly Emgrand",
+        "price": 116000.0,
+        "fuel_type": "Газ / бензин"
+    },
+    {
+        "title": "Porsche Cayenne 2012",
+        "price": 0.0,
+        "fuel_type": "Дизель"
+    },
+    {
+        "title": "Mercedes Sprinter 907  довга база",
+        "price": 0.0,
+        "fuel_type": "Дизель"
+    },
+    {
+        "title": "BMW e 46  в хорошем техническом состоянии , продажа срочная торг уместен",
+        "price": 0.0,
+        "fuel_type": "Газ / бензин"
+    },
+    {
+        "title": "Продам Фольксваген б5.1.9tdi 1997г.",
+        "price": 0.0,
+        "fuel_type": "Дизель"
+    },
+    {
+        "title": "Fiat Doblo Оригінальний Пасажир ! 2007р | Дизель-TDI",
+        "price": 0.0,
+        "fuel_type": "Дизель"
+    },
+    {
+        "title": "Prado 4.0 в идеальном состоянии!",
+        "price": 0.0,
+        "fuel_type": "Газ / бензин"
+    },
+    {
+        "title": "Продам  Фольксваген пасат",
+        "price": 170000.0,
+        "fuel_type": "Бензин"
+    },
+    {
+        "title": "Продам Mitsubishi Outlander 2007 у хорошому технічному та доглянутому стані. 3.0 V6  автомат  LPG (вписаний) Пробіг 165 000 км — чесний, не скручений.",
+        "price": 0.0,
+        "fuel_type": "Газ / бензин"
+    },
+    {
+        "title": "Продам авто БМВ х3 ф25 2017рік",
+        "price": 0.0,
+        "fuel_type": "Бензин"
+    },
+    {
+        "title": "Продам рено доккер",
+        "price": 0.0,
+        "fuel_type": "Дизель"
+    },
+    {
+        "title": "BMW E65 730D M57",
+        "price": 0.0,
+        "fuel_type": "Дизель"
+    },
+    {
+        "title": "Mazda 6 gg 2.0 дизель, Максимальна комплектація",
+        "price": 207000.0,
+        "fuel_type": "Дизель"
+    },
+    {
+        "title": "Nissan Terrano II 2.7 TDI 4x4 ТОРГ/ ОБМІН",
+        "price": 0.0,
+        "fuel_type": "Дизель"
+    },
+    {
+        "title": "Продам авто Volkswagen TOUAREG 2016",
+        "price": 0.0,
+        "fuel_type": "Дизель"
+    },
+    {
+        "title": "Renault kadjar 2021р дизель 1.5 dci",
+        "price": 0.0,
+        "fuel_type": "Дизель"
+    },
+    {
+        "title": "Продам надійний та економний Volkswagen Passat B5+ 2003 року випуску.",
+        "price": 0.0,
+        "fuel_type": "Дизель"
+    },
+    {
+        "title": "Chevrolet Lacetti 1.8 Газ 2007 Универсал",
+        "price": 0.0,
+        "fuel_type": "Газ / бензин"
+    },
+    {
+        "title": "Свіжопригнаний VW Тауран 1.9ТДІ не розмитнений у Києві",
+        "price": 0.0,
+        "fuel_type": "Дизель"
+    },
+    {
+        "title": "В продаже Sandero 1.6",
+        "price": 0.0,
+        "fuel_type": "Бензин"
+    },
+    {
+        "title": "Продам Getz на газу (автомат)",
+        "price": 0.0,
+        "fuel_type": "Газ / бензин"
+    },
+    {
+        "title": "Citroen Berlingo, пасажир 5 місць, рідна фарба, 12 р.в 1.6 бензин",
+        "price": 0.0,
+        "fuel_type": "Бензин"
+    },
+    {
+        "title": "Продам авто на полном ходу",
+        "price": 0.0,
+        "fuel_type": "Дизель"
+    },
+    {
+        "title": "Рестайлінг. АВТОМАТ. VW Touran 2007  2.0TDI  нерозмитнений в Києві",
+        "price": 0.0,
+        "fuel_type": "Дизель"
+    },
+    {
+        "title": "Продам форд транзит оригинальный пасажир 8+1 TREND",
+        "price": 0.0,
+        "fuel_type": "Дизель"
+    },
+    {
+        "title": "Продам шкоду фабію на автоматі",
+        "price": 0.0,
+        "fuel_type": "Газ / бензин"
+    },
+    {
+        "title": "dacia Logan mcv  1.5 dci 2011",
+        "price": 0.0,
+        "fuel_type": "Дизель"
+    }
+]
+
+====================================================================================================
+ФАЙЛ: starter-project\PROJECT_STRUCTURE.md
+====================================================================================================
+
+# Структура проекта: UPWORK-ALL
+
+```text
+UPWORK-ALL/
+├── 📁 memory/
+│   └── 📄 9. Самая важная папка.txt
+├── 📁 scraping-templates/
+│   ├── 📁 examples/
+│   │   ├── 📁 amazon/
+│   │   ├── 📁 login_site/
+│   │   ├── 📁 news_site/
+│   │   └── 📄 Я бы сделал больше..txt
+│   ├── 📁 knowledge/
+│   │   ├── 📄 api.md
+│   │   ├── 📄 bs4.md
+│   │   ├── 📄 cloudflare.md
+│   │   ├── 📄 docker.md
+│   │   ├── 📄 playwright.md
+│   │   ├── 📄 scrapy.md
+│   │   ├── 📄 selenium.md
+│   │   └── 📄 ИИ можно сразу скормить этот файл..txt
+│   ├── 📁 prompts/
+│   │   ├── 📄 01_analyze_project.md
+│   │   ├── 📄 02_generate_project.md
+│   │   ├── 📄 03_generate_module.md
+│   │   ├── 📄 04_debug.md
+│   │   ├── 📄 05_refactor.md
+│   │   ├── 📄 06_review.md
+│   │   ├── 📄 07_optimize.md
+│   │   ├── 📄 08_create_tests.md
+│   │   └── 📄 09_create_docker.md
+│   ├── 📁 scripts/
+│   │   └── 📁 tools/
+│   │       ├── 📄 create_project.py
+│   │       ├── 📄 dump_full_project.py
+│   │       ├── 📄 dump_structure.py
+│   │       └── 📄 prepare_for_ai.py
+│   ├── 📁 snippets/
+│   │   └── 📄 Туда можно складывать маленькие куски.txt
+│   ├── 📁 templates/
+│   │   ├── 📁 api/
+│   │   ├── 📁 beautifulsoup/
+│   │   ├── 📁 docker/
+│   │   ├── 📁 infinite_scroll/
+│   │   ├── 📁 login/
+│   │   ├── 📁 pagination/
+│   │   ├── 📁 playwright/
+│   │   ├── 📁 project/
+│   │   └── 📁 scrapy/
+│   └── 📄 AI_rules.md
+├── 📁 starter-project/
+│   ├── 📁 AI_INPUT/
+│   │   ├── 📁 screenshots/
+│   │   ├── 📄 answers.txt
+│   │   ├── 📄 cookies.json
+│   │   ├── 📄 description.txt
+│   │   ├── 📄 headers.json
+│   │   ├── 📄 network.har
+│   │   └── 📄 page.html
+│   ├── 📁 AI_OUTPUT/
+│   │   ├── 📄 final_prompt_for_ai.md
+│   │   └── 📄 Я бы сделал еще одну папку.txt
+│   ├── 📁 app/
+│   │   ├── 📄 browser.py
+│   │   ├── 📄 config.py
+│   │   ├── 📄 exporter.py
+│   │   ├── 📄 main.py
+│   │   ├── 📄 parser.py
+│   │   ├── 📄 scraper.py
+│   │   └── 📄 utils.py
+│   ├── 📁 docs/
+│   │   └── 📄 здесь пилим документацию.txt
+│   ├── 📁 input/
+│   ├── 📁 output/
+│   ├── 📁 tests/
+│   ├── 📁 workflows/
+│   │   └── 📄 Вот чего сейчас не хватает..txt
+│   ├── 📄 .env
+│   ├── 📄 docker-compose.yml
+│   ├── 📄 Dockerfile
+│   ├── 📄 PROJECT_STRUCTURE.md
+│   ├── 📄 README.md
+│   ├── 📄 requirements.txt
+│   └── 📄 Как добиться не писать лишний код.txt
+├── 📄 ai_workflow.py
+├── 📄 check-list.txt
+├── 📄 export_for_ai.py
+├── 📄 my_project_structure.txt
+├── 📄 Единый формат передачи задачи ИИ.txt
+└── 📄 САМОЕ ГЛАВНОЕ.txt
+```
+
+====================================================================================================
+ФАЙЛ: starter-project\README.md
+====================================================================================================
+
+# Starter Project — шаблон для Upwork scraping
+
+Это **шаблон**, не рабочий проект. Для нового заказа:
+
+```bash
+python ai_workflow.py new my_project_name
+```
+
+## Команды workflow
+
+| Команда | Что делает |
+|---------|-----------|
+| `new <name>` | Создать новый проект из шаблона |
+| `analyze [name]` | Промпт для анализа сайта |
+| `project [name]` | Промпт для плана (нужен analysis.md) |
+| `module scraper [name]` | Промпт для генерации scraper.py |
+| `module parser [name]` | Промпт для генерации parser.py |
+| `debug [name]` | Промпт для отладки ошибки |
+| `docker [name]` | Промпт для Dockerfile |
+
+Все команды запускаются из корня `UPWORK-ALL/`:
+
+```bash
+python ai_workflow.py analyze my_project_name
+```
+
+Или из папки проекта (имя не нужно):
+
+```bash
+cd my_project_name
+python ../ai_workflow.py analyze
+```
+
+## Структура app/
+
+| Файл | Менять? |
+|------|---------|
+| `main.py` | Нет — оркестратор |
+| `browser.py` | Нет — Playwright |
+| `config.py` | Нет — пути и настройки |
+| `exporter.py` | Нет — CSV/JSON |
+| `utils.py` | Нет — логи, задержки, цены |
+| `scraper.py` | **Да** — под каждый заказ |
+| `parser.py` | **Да** — под каждый заказ |
+
+Подробный workflow: `workflows/new_project.md`
+
+====================================================================================================
+ФАЙЛ: starter-project\requirements.txt
+====================================================================================================
+
+playwright==1.49.0
+beautifulsoup4==4.12.3
+python-dotenv==1.0.1
+
+====================================================================================================
+ФАЙЛ: starter-project\workflows\new_project.md
+====================================================================================================
+
+# Workflow: новый проект Upwork
+
+## Этап 0. Создание проекта
+
+```bash
+python ai_workflow.py new amazon_scraper
+```
+
+Создаётся папка `amazon_scraper/` с копией шаблона `starter-project/`.
+
+---
+
+## Этап 1. Сбор данных
+
+Заполни `amazon_scraper/AI_INPUT/`:
+
+| Файл | Что положить |
+|------|-------------|
+| `description.txt` | ТЗ клиента, URL, поля |
+| `page.html` | Сохранённая страница (Ctrl+S) |
+| `network.har` | Экспорт из DevTools → Network |
+| `cookies.json` | Если нужна авторизация |
+| `screenshots/` | Скриншоты (опционально) |
+
+---
+
+## Этап 2. Анализ
+
+```bash
+python ai_workflow.py analyze amazon_scraper
+```
+
+→ `AI_OUTPUT/final_prompt.md` → отправь в ChatGPT  
+→ сохрани ответ в `AI_OUTPUT/analysis.md`
+
+---
+
+## Этап 3. План проекта
+
+```bash
+python ai_workflow.py project amazon_scraper
+```
+
+→ `AI_OUTPUT/final_prompt.md` → отправь в ChatGPT  
+→ сохрани ответ в `AI_OUTPUT/project_plan.md`
+
+**project_plan.md** — это мини-ТЗ: какие функции в scraper.py и parser.py, формат данных, порядок работы. Не код.
+
+---
+
+## Этап 4. Генерация кода
+
+```bash
+python ai_workflow.py module scraper amazon_scraper
+python ai_workflow.py module parser amazon_scraper
+```
+
+→ каждый раз `AI_OUTPUT/final_prompt.md` → ChatGPT → код в `app/`
+
+---
+
+## Этап 5. Запуск
+
+```bash
+cd amazon_scraper
+pip install -r requirements.txt
+playwright install chromium
+python -m app.main
+```
+
+Результат: `output/output_results.csv` и `.json`
+
+---
+
+## Этап 6. Отладка
+
+При ошибке сохрани traceback:
+
+```
+amazon_scraper/AI_OUTPUT/traceback.txt
+```
+
+```bash
+python ai_workflow.py debug amazon_scraper
+```
+
+---
+
+## Этап 7. Docker
+
+```bash
+python ai_workflow.py docker amazon_scraper
+```
+
+Сохрани сгенерированные `Dockerfile` и `docker-compose.yml` в корень проекта.
+
+---
+
+## Этап 8. Сдача клиенту
+
+- `app/` — код
+- `output/` — пример результата
+- `README.md` — инструкция запуска
+- `Dockerfile` — если просили
+
+====================================================================================================
+ФАЙЛ: starter-project\workflows\Вот чего сейчас не хватает..txt
+====================================================================================================
+
+workflows/
+
+Например
+
+workflows/
+
+new_project.md
+
+debugging.md
+
+client_delivery.md
+
+upwork_proposal.md
+
+Например
+
+new_project.md
+1 Получить описание клиента
+
+↓
+
+2 Сохранить page.html
+
+↓
+
+3 Сохранить network.har
+
+↓
+
+4 Сделать screenshot
+
+↓
+
+5 Запустить prepare_for_ai.py
+
+↓
+
+6 Отправить ИИ
+
+↓
+
+7 Получить код
+
+↓
+
+8 Запустить
+
+↓
+
+9 Исправить ошибки
+
+↓
+
+10 Docker
+
+↓
+
+11 Отправить клиенту
+
+Это реально экономит время.
+
+9. AI_INPUT
+
+====================================================================================================
+ФАЙЛ: starter-project\Как добиться не писать лишний код.txt
+====================================================================================================
+
+Прямо написать.
+
+Не добавляй функциональность,
+которую я не просил.
+
+Не создавай классы,
+если достаточно функций.
+
+Не добавляй меню.
+
+Не добавляй GUI.
+
+Не добавляй CLI.
+
+Не добавляй настройки,
+которые нигде не используются.
+
+====================================================================================================
+ФАЙЛ: Единый формат передачи задачи ИИ.txt
+====================================================================================================
+
+CLIENT/
+    description.txt
+
+SITE/
+    url.txt
+    page.html
+    network.har
+    screenshots/
+
+PROJECT/
+    project_for_ai.txt
+
+TASK/
+    requirements.txt
+
+====================================================================================================
+ФАЙЛ: САМОЕ ГЛАВНОЕ.txt
+====================================================================================================
+
+Единый инструмент: ai_workflow.py
+
+01. python ai_workflow.py new <имя_проекта>
+02. Заполнить AI_INPUT/ (description.txt, page.html, network.har...)
+03. python ai_workflow.py analyze <имя>
+04. Сохранить ответ → AI_OUTPUT/analysis.md
+05. python ai_workflow.py project <имя>
+06. Сохранить ответ → AI_OUTPUT/project_plan.md
+07. python ai_workflow.py module scraper <имя>
+08. Сохранить код → app/scraper.py
+09. python ai_workflow.py module parser <имя>
+10. Сохранить код → app/parser.py
+11. python -m app.main  (из папки проекта)
+12. При ошибке: сохранить traceback в AI_OUTPUT/traceback.txt → python ai_workflow.py debug <имя>
+13. python ai_workflow.py docker <имя>
+14. Сдать клиенту
+
+====================================================================================================
+СТАТИСТИКА
+====================================================================================================
+Всього файлів : 62
+
+За типами:
+  .csv                 1
+  .har                 1
+  .html                1
+  .json                3
+  .md                  25
+  .py                  13
+  .txt                 14
+  .yml                 1
+  <без розширення>     3

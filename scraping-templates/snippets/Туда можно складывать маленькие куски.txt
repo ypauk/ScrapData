@@ -1,0 +1,23 @@
+Туда можно складывать маленькие куски.
+
+Например
+
+snippets/
+
+    save_json.py
+
+    save_csv.py
+
+    random_user_agent.py
+
+    proxy_rotation.py
+
+    logger.py
+
+    retry.py
+
+    cookies.py
+
+    headers.py
+
+    sqlite.py

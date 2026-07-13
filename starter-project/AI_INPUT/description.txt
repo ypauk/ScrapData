@@ -1,0 +1,6 @@
+надо извлечданные из одной страницы:
+https://www.olx.ua/uk/transport/legkovye-avtomobili/
+
+название
+цена
+вид топлива

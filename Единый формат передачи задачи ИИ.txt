@@ -1,0 +1,14 @@
+CLIENT/
+    description.txt
+
+SITE/
+    url.txt
+    page.html
+    network.har
+    screenshots/
+
+PROJECT/
+    project_for_ai.txt
+
+TASK/
+    requirements.txt

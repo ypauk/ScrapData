@@ -1,0 +1,32 @@
+Это вообще то, чего нет почти ни у кого.
+
+AI_OUTPUT/
+
+После каждого общения с ИИ сохранять
+
+AI_OUTPUT/
+
+analysis.md
+
+generated_code.md
+
+debug.md
+
+review.md
+
+Через год у тебя будет сотни решений.
+
+Можно будет искать
+
+Cloudflare
+
+Playwright
+
+Captcha
+
+CSV
+
+JSON
+
+
+И находить, как ты уже решал похожую задачу.

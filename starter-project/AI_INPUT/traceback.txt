@@ -1,0 +1,7 @@
+3.14-64\python.exe c:/Users/asus/Desktop/UPWORK-ALL/starter-project/app/main.py
+======================================================================
+[c:\Users\asus\Desktop\UPWORK-ALL\starter-project\app\main.py] ЗАПУСК ПАРСЕРА
+======================================================================
+[C:\Users\asus\Desktop\UPWORK-ALL\starter-project\app\browser.py] Запуск Chromium (Headless=False)...
+[c:\Users\asus\Desktop\UPWORK-ALL\starter-project\app\main.py] Критический сбой в главном потоке: fetch_page_data() takes 0 positional arguments but 1 was given
+PS C:\Users\asus\Desktop\UPWORK-ALL> 
