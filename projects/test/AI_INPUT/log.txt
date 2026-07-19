@@ -1,0 +1,20 @@
+PS C:\Users\user\Desktop\UPWORK-ALL\projects\test\app> python .\main.py
+======================================================================
+[C:\Users\user\Desktop\UPWORK-ALL\projects\test\app\main.py] ЗАПУСК ПАРСЕРА
+======================================================================
+[C:\Users\user\Desktop\UPWORK-ALL\projects\test\app\browser.py] Запуск Chromium (Headless=False)...
+[C:\Users\user\Desktop\UPWORK-ALL\projects\test\app\browser.py] Куки успешно загружены из cookies.json
+[C:\Users\user\Desktop\UPWORK-ALL\projects\test\app\scraper.py] Запуск процесса сбора данных...
+[C:\Users\user\Desktop\UPWORK-ALL\projects\test\app\scraper.py] Получение контента страницы: https://auto.ria.com/uk/search/?search_type=2&category=1&abroad=0&customs_cleared=1
+[C:\Users\user\Desktop\UPWORK-ALL\projects\test\app\scraper.py] Попытка 1 запроса к https://auto.ria.com/uk/search/?search_type=2&cate...
+[C:\Users\user\Desktop\UPWORK-ALL\projects\test\app\scraper.py] Успешный ответ (статус: 200)
+[C:\Users\user\Desktop\UPWORK-ALL\projects\test\app\scraper.py] Контент получен (длина: 82931 символов)
+[C:\Users\user\Desktop\UPWORK-ALL\projects\test\app\scraper.py] Сбор данных успешно завершен. Получено страниц: 1
+[C:\Users\user\Desktop\UPWORK-ALL\projects\test\app\scraper.py] Сбор данных завершен. Получено страниц: 1
+[C:\Users\user\Desktop\UPWORK-ALL\projects\test\app\main.py] Браузер успешно закрыт.
+[C:\Users\user\Desktop\UPWORK-ALL\projects\test\app\main.py] Начало парсинга контента...
+[C:\Users\user\Desktop\UPWORK-ALL\projects\test\app\parser.py] Начало обработки 1 страниц(ы)...
+[C:\Users\user\Desktop\UPWORK-ALL\projects\test\app\parser.py] Предупреждение: Карточки объявлений на странице не найдены.
+[C:\Users\user\Desktop\UPWORK-ALL\projects\test\app\parser.py] Страница #1: найдено 0 объявлений
+[C:\Users\user\Desktop\UPWORK-ALL\projects\test\app\parser.py] Парсинг успешно завершен. Всего собрано элементов: 0
+[C:\Users\user\Desktop\UPWORK-ALL\projects\test\app\main.py] Предупреждение: Парсер вернул пустой результат. Файлы не созданы.

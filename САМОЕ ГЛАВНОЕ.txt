@@ -1,5 +1,7 @@
 Единый инструмент: ai_workflow.py
 
+https://github.com/settings/copilot/features
+
 01. python ai_workflow.py new <имя_проекта>
 02. Заполнить AI_INPUT/ (description.txt, page.html, network.har...)
 03. python ai_workflow.py analyze <имя>

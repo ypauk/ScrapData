@@ -11,8 +11,11 @@
     python ai_workflow.py module parser [project_name]
     python ai_workflow.py debug [project_name]
     python ai_workflow.py docker [project_name]
+    python ai_workflow.py review [project_name]
+    python ai_workflow.py improve [project_name]
 
 Если project_name не указан — берётся текущая папка (если это проект).
+
 """
 
 from __future__ import annotations
@@ -55,7 +58,18 @@ STAGES = {
     "parser": {"prompt": "04_parser_prompt.md", "answer": "04_parser_answer.py"},
     "debug": {"prompt": "05_debug_prompt.md", "answer": "05_debug_answer.md"},
     "docker": {"prompt": "06_docker_prompt.md", "answer": "06_Dockerfile"},
+    "review": {"prompt": "07_platform_review_prompt.md", "answer": "07_platform_review_answer.md"},
+    "improve": {"prompt": "08_platform_improve_prompt.md", "answer": "08_platform_improve_answer.md"},
 }
+
+# Задача (task) для платформенных команд review/improve.
+# review — расследование архитектурной ошибки (берём существующий 06_review.md).
+# improve — общие улучшения платформы без привязки к конкретной ошибке.
+PLATFORM_TASK_FILES = {
+    "review": "06_review.md",
+    "improve": "09_improve_task.md",
+}
+
 
 CORE_FILES = [
     "app/main.py",
@@ -276,12 +290,102 @@ def collect_debug_context(project: Path) -> str:
     return "(traceback не найден — сохрани ошибку в AI_OUTPUT/traceback.txt)"
 
 
+TRACEBACK_NOT_FOUND = "(traceback не найден — сохрани ошибку в AI_INPUT/traceback.txt)"
+EXECUTION_LOG_NOT_FOUND = "(лог выполнения не найден — сохрани вывод консоли в AI_INPUT/log.txt)"
+
+
+def collect_traceback(project: Path) -> str:
+    """Ищет traceback в стандартных местах проекта."""
+    candidates = [
+        project / "AI_INPUT" / "traceback.txt",
+        project / "AI_OUTPUT" / "traceback.txt",
+        project / "logs" / "last_error.txt",
+        project / "traceback.txt",
+    ]
+    for path in candidates:
+        if path.exists() and path.stat().st_size > 0:
+            return read_text(path)
+    return TRACEBACK_NOT_FOUND
+
+
+def collect_execution_log(project: Path) -> str:
+    """Ищет лог выполнения (консольный вывод) в стандартных местах проекта."""
+    candidates = [
+        project / "AI_INPUT" / "log.txt",
+        project / "AI_INPUT" / "console_output.txt",
+        project / "logs" / "console_output.txt",
+        project / "logs" / "log.txt",
+    ]
+    for path in candidates:
+        if path.exists() and path.stat().st_size > 0:
+            return read_text(path)
+
+    logs_dir = project / "logs"
+    if logs_dir.exists():
+        for f in sorted(logs_dir.glob("*.txt")):
+            if f.stat().st_size > 0:
+                return read_text(f)
+
+    return EXECUTION_LOG_NOT_FOUND
+
+
+
+def code_block(path: Path, lang: str = "python") -> str:
+    """Оборачивает содержимое файла в markdown code block."""
+    content = read_text(path, "(файл не найден)")
+    return f"```{lang}\n{content}\n```"
+
+
+def generate_project_structure(project: Path) -> str:
+    """Строит дерево структуры конкретного проекта (без содержимого workspace)."""
+    lines: list[str] = [f"{project.name}/"]
+
+    def walk(directory: Path, prefix: str = "") -> None:
+        try:
+            items = sorted(
+                [
+                    item for item in directory.iterdir()
+                    if item.name not in COPY_SKIP_DIRS and not item.name.startswith(".")
+                ],
+                key=lambda p: (p.is_file(), p.name.lower()),
+            )
+        except PermissionError:
+            return
+
+        for index, item in enumerate(items):
+            last = index == len(items) - 1
+            connector = "└── " if last else "├── "
+            if item.is_dir():
+                lines.append(f"{prefix}{connector}{item.name}/")
+                walk(item, prefix + ("    " if last else "│   "))
+            else:
+                lines.append(f"{prefix}{connector}{item.name}")
+
+    walk(project)
+    return "\n".join(lines)
+
+
+
 def save_prompt(project: Path, content: str, stage: str) -> Path:
     # Берем имя файла промпта из вложенного словаря
     filename = STAGES[stage]["prompt"]
     out = project / "AI_OUTPUT" / filename
     write_text(out, content)
     return out
+
+
+def create_default_ai_output_files(project: Path) -> None:
+    """Создаёт пустые шаблоны для ответов ИИ в AI_OUTPUT проекта."""
+    ai_output_dir = project / "AI_OUTPUT"
+    ai_output_dir.mkdir(parents=True, exist_ok=True)
+
+    for filename in [
+        "01_analysis_answer.md",
+        "02_project_answer.md",
+        "03_scraper_answer.py",
+        "04_parser_answer.py",
+    ]:
+        write_text(ai_output_dir / filename, "")
 
 
 def next_step_hint(stage: str, project: Path) -> None:
@@ -334,11 +438,12 @@ def cmd_new(name: str) -> None:
     clean_directory(dest / "tests" / "output")
     clear_files(dest / "AI_INPUT")
 
-    # Пустые шаблоны AI_INPUT
+    # Пустые шаблоны AI_INPUT и AI_OUTPUT
     write_text(dest / "AI_INPUT" / "description.txt", "# Описание задачи клиента\n\nURL:\n\nПоля для извлечения:\n\n")
     write_text(dest / "AI_INPUT" / "answers.txt", "")
     write_text(dest / "AI_INPUT" / "cookies.json", "[]\n")
     write_text(dest / "AI_INPUT" / "headers.json", "{}\n")
+    create_default_ai_output_files(dest)
 
     # README проекта
     readme = f"""# {name}
@@ -378,7 +483,20 @@ python -m app.main
     print()
     info("Дальше:")
     print(f"   1. Заполни {dest / 'AI_INPUT' / 'description.txt'}")
-    print(f"   2. python ai_workflow.py analyze {name}")
+    print(f"   2. Копируй и вставляй команды ниже:")
+    print(f"      python ai_workflow.py analyze {name}")
+    print(f"      python ai_workflow.py project {name}")
+    print(f"      python ai_workflow.py scraper {name}")
+    print(f"      python ai_workflow.py parser {name}")
+    print(f"      python ai_workflow.py debug {name}")
+    print(f"   3. В {dest / 'AI_OUTPUT'} созданы пустые шаблоны:")
+    for filename in [
+        "01_analysis_answer.md",
+        "02_project_answer.md",
+        "03_scraper_answer.py",
+        "04_parser_answer.py",
+    ]:
+        print(f"      - {dest / 'AI_OUTPUT' / filename}")
 
 
 def cmd_analyze(project: Path) -> None:
@@ -449,21 +567,49 @@ def cmd_scraper(project: Path) -> None:
 
 
 def cmd_parser(project: Path) -> None:
-    # Парсер теперь знает про код скрапера
+    # Проверяем, что анализ уже существует
+    analysis_file = project / "AI_OUTPUT" / "01_analysis_answer.md"
+    if not analysis_file.exists():
+        die(f"Сначала сохрани анализ в {analysis_file}")
+
+    # Проверяем, что план уже существует
+    plan_file = project / "AI_OUTPUT" / "02_project_answer.md"
+    if not plan_file.exists():
+        die(f"Сначала сохрани план в {plan_file}")
+
+    # Парсер теперь знает про код скрапера (для согласования формата данных)
     scraper_code = project / "AI_OUTPUT" / "03_scraper_answer.py"
     if not scraper_code.exists():
         die(f"Сначала сохрани код скрапера в {scraper_code}")
 
-    template = load_template("parser") # Подтянет 04_parser_prompt.md
-    prompt = fill_template(template, {
-        "SCRAPER_CODE": read_text(scraper_code),
-        "AI_RULES": read_text(AI_RULES_FILE),
-    })
-    
+    module_file = MODULE_FILES["parser"]
+    module_path = project / module_file
+
+    template = load_template("parser")  # Подтянет 04_parser_prompt.md
+
+    prompt = fill_template(
+        template,
+        {
+            "ANALYSIS": read_text(analysis_file),
+            "PROJECT_PLAN": read_text(plan_file),
+            "AI_RULES": read_text(AI_RULES_FILE),
+            "AI_INPUT": collect_ai_input(project, include_html=False),
+
+            "MODULE_FILE": module_file,
+            "MODULE_NAME": "parser",
+            "MODULE_TEMPLATE": read_text(module_path, "(пустой файл)"),
+            "CORE_FILES": collect_core_files(project),
+
+            # SCRAPER_CODE оставлен для совместимости, если понадобится в шаблоне промпта
+            "SCRAPER_CODE": read_text(scraper_code),
+        },
+    )
+
     out = save_prompt(project, prompt, "parser")
     ok(f"Промпт парсера: {out}")
     print(f"\n1. Отправь в ChatGPT: {out}")
     print(f"2. Сохрани ответ (код) в: {project / 'AI_OUTPUT' / '04_parser_answer.py'}")
+
 
 def cmd_archive(project: Path) -> None:
     """Перемещает проект в архив."""
@@ -483,12 +629,42 @@ def cmd_archive(project: Path) -> None:
     ok(f"Проект перенесён в: {target}")
 
 def cmd_debug(project: Path) -> None:
+    # ВАЖНО: используем реальные имена файлов из STAGES, а не устаревшие
+    # "analysis.md"/"project_plan.md" — их не существует в проекте.
+    analysis_file = project / "AI_OUTPUT" / STAGES["analyze"]["answer"]
+    plan_file = project / "AI_OUTPUT" / STAGES["project"]["answer"]
+
+    # Собираем ERROR_LOG из двух источников: traceback (если реальный краш)
+    # и execution log (если просто "0 карточек", "пустой результат" и т.п.)
+    # ВАЖНО: сравниваем с точными константами-заглушками, а не ищем подстроку
+    # "не найден" — реальные логи парсера часто содержат фразы вида
+    # "Карточки объявлений на странице не найдены", что ранее приводило
+    # к ложному отбрасыванию валидного лога.
+    traceback_text = collect_traceback(project)
+    log_text = collect_execution_log(project)
+
+    error_log_parts = []
+    if traceback_text != TRACEBACK_NOT_FOUND:
+        error_log_parts.append(f"--- TRACEBACK ---\n{traceback_text}")
+    if log_text != EXECUTION_LOG_NOT_FOUND:
+        error_log_parts.append(f"--- EXECUTION LOG (консольный вывод) ---\n{log_text}")
+
+
+    if not error_log_parts:
+        error_log = (
+            "(Ни traceback, ни лог выполнения не найдены.\n"
+            " Сохрани вывод консоли в AI_INPUT/log.txt "
+            "или реальный traceback в AI_INPUT/traceback.txt перед запуском debug.)"
+        )
+    else:
+        error_log = "\n\n".join(error_log_parts)
+
     template = load_template("debug")
     prompt = fill_template(template, {
-        "PROJECT_PLAN": read_text(project / "AI_OUTPUT" / "project_plan.md", "(нет project_plan.md)"),
-        "ANALYSIS": read_text(project / "AI_OUTPUT" / "analysis.md", "(нет analysis.md)"),
+        "ANALYSIS": read_text(analysis_file, "(нет 01_analysis_answer.md — сначала выполни analyze)"),
+        "PROJECT_PLAN": read_text(plan_file, "(нет 02_project_answer.md — сначала выполни project)"),
         "CURRENT_CODE": collect_app_code(project),
-        "ERROR_LOG": collect_debug_context(project),
+        "ERROR_LOG": error_log,
         "AI_RULES": read_text(AI_RULES_FILE),
     })
     out = save_prompt(project, prompt, "debug")
@@ -500,7 +676,7 @@ def cmd_docker(project: Path) -> None:
     template = load_template("docker")
     prompt = fill_template(template, {
         "PROJECT_NAME": project.name,
-        "ANALYSIS": read_text(project / "AI_OUTPUT" / "analysis.md", "(нет analysis.md)"),
+        "ANALYSIS": read_text(project / "AI_OUTPUT" / STAGES["analyze"]["answer"], "(нет 01_analysis_answer.md)"),
         "PROJECT_CODE": collect_app_code(project),
         "REQUIREMENTS": read_text(project / "requirements.txt"),
         "AI_RULES": read_text(AI_RULES_FILE),
@@ -508,6 +684,82 @@ def cmd_docker(project: Path) -> None:
     out = save_prompt(project, prompt, "docker")
     ok(f"Промпт Docker: {out}")
     next_step_hint("docker", project)
+
+
+
+def build_platform_dump(project: Path, task_content: str) -> str:
+    """
+    Собирает ВСЁ по цепочке workflow в единый markdown-документ:
+
+    description.txt -> 01_analysis_answer -> 02_project_answer ->
+    scraper.py -> parser.py -> browser.py -> main.py ->
+    traceback -> execution log -> PROJECT_STRUCTURE -> TASK
+
+    Именно этот документ вставляется целиком в ChatGPT.
+    """
+    sections: list[tuple[str, str]] = []
+
+    sections.append(("CLIENT DESCRIPTION", read_text(
+        project / "AI_INPUT" / "description.txt", "(description.txt не найден)"
+    )))
+
+    sections.append(("ANALYSIS", read_text(
+        project / "AI_OUTPUT" / STAGES["analyze"]["answer"], "(01_analysis_answer.md не найден)"
+    )))
+
+    sections.append(("PROJECT PLAN", read_text(
+        project / "AI_OUTPUT" / STAGES["project"]["answer"], "(02_project_answer.md не найден)"
+    )))
+
+    sections.append(("SCRAPER.PY", code_block(project / "app" / "scraper.py")))
+    sections.append(("PARSER.PY", code_block(project / "app" / "parser.py")))
+
+    sections.append(("TRACEBACK", collect_traceback(project)))
+    sections.append(("EXECUTION LOG", collect_execution_log(project)))
+
+    sections.append(("BROWSER.PY", code_block(project / "app" / "browser.py")))
+    sections.append(("MAIN.PY", code_block(project / "app" / "main.py")))
+
+    sections.append(("PROJECT STRUCTURE", generate_project_structure(project)))
+
+    sections.append(("YOUR TASK", task_content))
+
+    separator = "\n\n" + ("-" * 60) + "\n\n"
+    parts = [f"# {title}\n\n{content}" for title, content in sections]
+    return separator.join(parts)
+
+
+def cmd_platform(project: Path, mode: str) -> None:
+    """
+    Общая реализация для 'review' и 'improve'.
+
+    Собирает весь контекст проекта (описание, анализ, план, код модулей,
+    traceback, лог выполнения, структуру) + задачу (task) в один готовый
+    промпт AI_OUTPUT/0X_platform_..._prompt.md, который остаётся только
+    вставить в ChatGPT.
+    """
+    task_file = PROMPTS_DIR / PLATFORM_TASK_FILES[mode]
+    task_content = read_text(
+        task_file,
+        f"(файл задачи не найден: {task_file})"
+    )
+
+    prompt = build_platform_dump(project, task_content)
+    out = save_prompt(project, prompt, mode)
+
+    ok(f"Промпт '{mode}' собран: {out}")
+    print(f"\n1. Открой файл: {out}")
+    print(f"2. Вставь ЦЕЛИКОМ в ChatGPT.")
+    print(f"3. Сохрани ответ в: {project / 'AI_OUTPUT' / STAGES[mode]['answer']}")
+
+
+def cmd_review(project: Path) -> None:
+    cmd_platform(project, "review")
+
+
+def cmd_improve(project: Path) -> None:
+    cmd_platform(project, "improve")
+
 
 
 # ---------------------------------------------------------------------------
@@ -527,13 +779,16 @@ def build_parser() -> argparse.ArgumentParser:
   python ai_workflow.py module parser amazon_scraper
   python ai_workflow.py debug amazon_scraper
   python ai_workflow.py docker amazon_scraper
+  python ai_workflow.py review amazon_scraper
+  python ai_workflow.py improve amazon_scraper
         """,
     )
     parser.add_argument(
         "command",
-        choices=["new", "analyze",  "archive", "project", "scraper", "parser", "debug", "docker"],
+        choices=["new", "analyze", "archive", "project", "scraper", "parser", "debug", "docker", "review", "improve"],
         help="Этап workflow",
     )
+
     parser.add_argument(
         "args",
         nargs="*",
@@ -588,7 +843,10 @@ def main() -> None:
         "debug": lambda: cmd_debug(project),
         "docker": lambda: cmd_docker(project),
         "archive": lambda: cmd_archive(project),
+        "review": lambda: cmd_review(project),
+        "improve": lambda: cmd_improve(project),
     }
+
 
     dispatch[command]()
 

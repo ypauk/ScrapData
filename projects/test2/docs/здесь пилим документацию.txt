@@ -1,0 +1,10 @@
+
+    architecture.md
+
+    workflow.md
+
+    ai_rules.md
+
+    roadmap.md
+
+    ideas.md

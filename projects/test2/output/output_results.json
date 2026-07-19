@@ -1,0 +1,149 @@
+[
+    {
+        "Image URL": "https://cdn0.riastatic.com/photosnew/auto/photo/volkswagen_tiguan__636138351fx.jpg",
+        "Car Name": "Volkswagen Tiguan 2021",
+        "Price": "31 500 $",
+        "Fuel Type": "Дизель, 1.97 л",
+        "City": "Київ"
+    },
+    {
+        "Image URL": "https://cdn0.riastatic.com/photosnew/auto/photo/volkswagen_tiguan__647859606fx.jpg",
+        "Car Name": "Volkswagen Tiguan 2023",
+        "Price": "22 850 $",
+        "Fuel Type": "Бензин, 1.97 л",
+        "City": "Львів (Львівська)"
+    },
+    {
+        "Image URL": "https://cdn0.riastatic.com/photosnew/auto/photo/tesla_model-3__648680634fx.jpg",
+        "Car Name": "Tesla Model 3 2024",
+        "Price": "30 499 $",
+        "Fuel Type": "Електро, 82 кВт·год",
+        "City": "Київ"
+    },
+    {
+        "Image URL": "https://cdn0.riastatic.com/photosnew/auto/photo/audi_q5__639000050fx.jpg",
+        "Car Name": "Audi Q5 2020",
+        "Price": "27 897 $",
+        "Fuel Type": "Бензин, 1.98 л",
+        "City": "Рівне (Рівненська)"
+    },
+    {
+        "Image URL": "https://cdn0.riastatic.com/photosnew/auto/photo/volkswagen_passat__650430636fx.jpg",
+        "Car Name": "Volkswagen Passat 2016",
+        "Price": "11 700 $",
+        "Fuel Type": "Дизель, 1.6 л",
+        "City": "Вишгород"
+    },
+    {
+        "Image URL": "https://cdn0.riastatic.com/photosnew/auto/photo/audi_q5__650370918fx.jpg",
+        "Car Name": "Audi Q5 2021",
+        "Price": "25 900 $",
+        "Fuel Type": "Бензин, 1.98 л",
+        "City": "Стрий"
+    },
+    {
+        "Image URL": "https://cdn0.riastatic.com/photosnew/auto/photo/volkswagen_passat__650323895fx.jpg",
+        "Car Name": "Volkswagen Passat 2016",
+        "Price": "12 450 $",
+        "Fuel Type": "Дизель, 2 л",
+        "City": "Київ"
+    },
+    {
+        "Image URL": "https://cdn0.riastatic.com/photosnew/auto/photo/kia_ceed__650681891fx.jpg",
+        "Car Name": "Kia Ceed 2012",
+        "Price": "6 850 $",
+        "Fuel Type": "Дизель, 1.4 л",
+        "City": "Київ"
+    },
+    {
+        "Image URL": "https://cdn0.riastatic.com/photosnew/auto/photo/volkswagen_tiguan__650678414fx.jpg",
+        "Car Name": "Volkswagen Tiguan 2008",
+        "Price": "9 699 $",
+        "Fuel Type": "Дизель, 2 л",
+        "City": "Київ"
+    },
+    {
+        "Image URL": "https://cdn0.riastatic.com/photosnew/auto/photo/volkswagen_passat__650668350fx.jpg",
+        "Car Name": "Volkswagen Passat 2016",
+        "Price": "8 999 $",
+        "Fuel Type": "Бензин, 1.8 л",
+        "City": "Київ"
+    },
+    {
+        "Image URL": "https://cdn0.riastatic.com/photosnew/auto/photo/audi_q5__646861674fx.jpg",
+        "Car Name": "Audi Q5 2014",
+        "Price": "20 900 $",
+        "Fuel Type": "Дизель, 2.97 л",
+        "City": "Львів (Львівська)"
+    },
+    {
+        "Image URL": "https://cdn0.riastatic.com/photosnew/auto/photo/bmw_x3__641943751fx.jpg",
+        "Car Name": "BMW X3 2016",
+        "Price": "16 000 $",
+        "Fuel Type": "Бензин, 2 л",
+        "City": "Львів (Львівська)"
+    },
+    {
+        "Image URL": "https://cdn0.riastatic.com/photosnew/auto/photo/land-rover_range-rover-sport__648161078fx.jpg",
+        "Car Name": "Land Rover Range Rover Sport 2016",
+        "Price": "29 999 $",
+        "Fuel Type": "Дизель, 3 л",
+        "City": "Коломия"
+    },
+    {
+        "Image URL": "https://cdn0.riastatic.com/photosnew/auto/photo/porsche_cayenne__650750320fx.jpg",
+        "Car Name": "Porsche Cayenne 2008",
+        "Price": "8 500 $",
+        "Fuel Type": "Бензин, 4.81 л",
+        "City": "Київ"
+    },
+    {
+        "Image URL": "https://cdn0.riastatic.com/photosnew/auto/photo/volkswagen_golf__648234297fx.jpg",
+        "Car Name": "Volkswagen Golf 2020",
+        "Price": "21 500 $",
+        "Fuel Type": "Бензин, 1.4 л",
+        "City": "Київ"
+    },
+    {
+        "Image URL": "https://cdn0.riastatic.com/photosnew/auto/photo/land-rover_range-rover__650194371fx.jpg",
+        "Car Name": "Land Rover Range Rover 2017",
+        "Price": "33 350 $",
+        "Fuel Type": "Дизель, 2.99 л",
+        "City": "Кривий Ріг"
+    },
+    {
+        "Image URL": "https://cdn0.riastatic.com/photosnew/auto/photo/land-rover_range-rover-sport__640143378fx.jpg",
+        "Car Name": "Land Rover Range Rover Sport 2018",
+        "Price": "36 000 $",
+        "Fuel Type": "Бензин",
+        "City": "Київ"
+    },
+    {
+        "Image URL": "https://cdn0.riastatic.com/photosnew/auto/photo/land-rover_range-rover__650696080fx.jpg",
+        "Car Name": "Land Rover Range Rover 2023",
+        "Price": "145 000 $",
+        "Fuel Type": "Гібрид, 3 л",
+        "City": "Одеса"
+    },
+    {
+        "Image URL": "https://cdn0.riastatic.com/photosnew/auto/photo/ford_escape__618435017fx.jpg",
+        "Car Name": "Ford Escape 2017",
+        "Price": "8 700 $",
+        "Fuel Type": "Бензин, 1.5 л",
+        "City": "Бровари"
+    },
+    {
+        "Image URL": "https://cdn0.riastatic.com/photosnew/auto/photo/bmw_x3__650235225fx.jpg",
+        "Car Name": "BMW X3 2019",
+        "Price": "31 500 $",
+        "Fuel Type": "Бензин, 2 л",
+        "City": "Рівне (Рівненська)"
+    },
+    {
+        "Image URL": "https://cdn0.riastatic.com/photosnew/auto/photo/porsche_cayenne__644197646fx.jpg",
+        "Car Name": "Porsche Cayenne 2023",
+        "Price": "122 000 $",
+        "Fuel Type": "Бензин, 4 л",
+        "City": "Київ"
+    }
+]
