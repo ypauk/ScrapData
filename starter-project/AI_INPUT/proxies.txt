@@ -1,0 +1,14 @@
+# Список прокси для File Proxy Provider (app/file_proxy_provider.py).
+# Одна запись на строку. Пустые строки и строки, начинающиеся с "#", игнорируются.
+#
+# Поддерживаемые форматы:
+#   ip:port
+#   ip:port:username:password
+#   http://ip:port
+#   http://username:password@ip:port
+#   socks5://username:password@ip:port
+#
+# Примеры (раскомментируйте и замените на реальные значения):
+# 1.2.3.4:8080
+# 5.6.7.8:8081:username:password
+# http://username:password@9.10.11.12:8083

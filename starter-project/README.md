@@ -40,7 +40,24 @@ python ../ai_workflow.py analyze
 | `config.py` | Нет — пути и настройки |
 | `exporter.py` | Нет — CSV/JSON |
 | `utils.py` | Нет — логи, задержки, цены |
-| `scraper.py` | **Да** — под каждый заказ |
-| `parser.py` | **Да** — под каждый заказ |
+| `html_parser.py` | Нет — универсальный слой BeautifulSoup |
+| `scraper.py` | **Да** — под каждый заказ (сейчас: демо-пример OLX) |
+| `parser.py` | **Да** — под каждый заказ (сейчас: демо-пример OLX) |
+
+⚠️ **Важно про `scraper.py`/`parser.py`:** прямо сейчас в них лежит не
+пустая заготовка, а **рабочий демо-пример парсинга OLX** (объявления авто) —
+он демонстрирует полный цикл workflow на реальном сайте. Для нового заказа
+эти два файла нужно заменить:
+
+```bash
+python ../ai_workflow.py module scraper <project_name>
+python ../ai_workflow.py module parser <project_name>
+```
+
+Это сгенерирует промпты под конкретный сайт клиента; ответы ИИ сохраняются
+в `AI_OUTPUT/03_scraper_answer.py` / `AI_OUTPUT/04_parser_answer.py` и
+переносятся в `app/scraper.py` / `app/parser.py` соответственно.
 
 Подробный workflow: `workflows/new_project.md`
+
+

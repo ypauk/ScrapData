@@ -1,0 +1,41 @@
+# Описание задачи клиента
+
+URL:
+
+Поля для извлечения:
+
+Summary
+OVERVIEW: We are a recruitment business building an accurate contact database of UK care homes. We already know WHICH homes we need - your job is to find and verify the correct named decision-maker and contact details for each one, and enter them into a spreadsheet we provide. Accuracy is the number one priority. We verify every submission against the official CQC register and against our own records, so guessed, padded or generic-only entries will be rejected and returned for correction before payment.
+
+WHAT WE PROVIDE:
+- A list of the specific care homes we need contacts for (name, town, postcode).
+- A blank Google Sheet to enter your findings into. It has a worked SAMPLE ROW at the top showing the exact format required - please copy that format exactly. You will NOT have access to our main database; you work only in the sheet we share.
+
+WHAT YOU DO - FOR EACH HOME ON THE LIST:
+Find and enter the following into the columns provided:
+- First Name, Last Name of the correct named contact (see targeting rules below)
+- Job Title (use the wording shown in the sample)
+- Company Type (as shown in the sample dropdown options)
+- CSA: always enter "No"
+- Tier: always enter "3"
+- Company Name (the care home name), HYPERLINKED to the home's OWN website (not a directory, not the CQC page)
+- Region, Postal Town
+- Email - a direct/named email where possible
+
+TARGETING RULES - WHO TO CONTACT (based on operator size, which you must verify from the operator's website, CQC record or LinkedIn - do not guess):
+- BAND A (independent/single home, ~under 40 beds): target the Registered Manager / Home Manager. Fallback: Owner / Director.
+- BAND B (mid-size, ~40-80 beds, or 2-10 homes in a group): target the Operations Director / Director of Care, or Group HR / Recruitment Manager. Fallback: individual Home Manager.
+- BAND C (large group, 80+ beds or 10+ homes): target the HR Director / Head of HR, or Head of Recruitment / Talent Acquisition. Fallback: Operations Director. Do NOT use an individual home manager as primary for Band C.
+Always find the top role first; only use the fallback if the top role genuinely cannot be found, and note why.
+
+RULES FOR EVERY ROW:
+- One NAMED person per home, not a department inbox. If only a generic inbox (info@, hr@, careers@) exists, still record it but clearly flag it as "generic - no named POC found". Do not pass a generic inbox off as a named contact.
+- Record the source (website/LinkedIn URL) where you found the contact so we can verify it.
+- No guessing and no filler. If you cannot find something, flag it - do not invent it.
+
+PROCESS & PAYMENT:
+- Work is delivered in the shared sheet only. We review, de-duplicate and run our Do Not Contact checks on our side before anything is used.
+- Fixed price is per batch/region. Payment is released once we have verified that batch for accuracy and completeness against CQC.
+- We will start with one region as a paid trial. Strong, accurate work leads to ongoing batches across all remaining UK regions.
+
+TO APPLY: Briefly tell us (1) your experience with B2B/contact research and data entry, (2) how you would confirm a care operator's size and find the right named decision-maker, and (3) answer the screening question about your method.
