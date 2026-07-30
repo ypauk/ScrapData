@@ -1,281 +1,288 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+# app/scraper.py
 
-"""
-Модуль scraper — сбор сырого HTML-контента с сайта professionele-koeling.nl.
-
-Отвечает только за сетевые запросы, навигацию и пагинацию.
-Использует requests + BeautifulSoup для обхода категории и получения HTML карточек товаров.
-
-Не выполняет парсинг данных — только возвращает список HTML-строк для parser.py.
-"""
-
+import re
 import time
-from typing import List, Optional
+from pathlib import Path
+from urllib.parse import urljoin
 
+import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 
-from app.config import TIMEOUT, RETRY_COUNT, DEFAULT_USER_AGENT
-from app.utils import random_delay
+
+BASE_URL = "https://professionele-koeling.nl"
+
+OUTPUT_FILE = "products.csv"
+
+CATEGORY_URLS = [
+    # Add category URLs here
+]
+
+HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 Chrome/120 Safari/537.36"
+    )
+}
 
 
-def fetch_listing_page(url: str) -> Optional[str]:
-    """
-    Получить HTML страницы категории.
+session = requests.Session()
+session.headers.update(HEADERS)
 
-    Args:
-        url: URL страницы категории
 
-    Returns:
-        str: HTML страницы или None при ошибке
-    """
-    headers = {
-        "User-Agent": DEFAULT_USER_AGENT,
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Connection": "keep-alive",
-        "Upgrade-Insecure-Requests": "1",
+def get_soup(url):
+    try:
+        response = session.get(url, timeout=30)
+        response.raise_for_status()
+        return BeautifulSoup(response.text, "html.parser")
+    except Exception as e:
+        print(f"Request failed: {url} -> {e}")
+        return None
+
+
+def clean_text(value):
+    if not value:
+        return ""
+
+    return re.sub(
+        r"\s+",
+        " ",
+        value.get_text(" ", strip=True)
+        if hasattr(value, "get_text")
+        else str(value),
+    ).strip()
+
+
+def normalize_price(price):
+    if not price:
+        return ""
+
+    price = price.replace("€", "")
+    price = price.replace("\xa0", "")
+    price = price.strip()
+
+    price = price.replace(".", "")
+    price = price.replace(",", ".")
+
+    match = re.search(r"\d+(\.\d+)?", price)
+
+    return match.group(0) if match else ""
+
+
+def extract_image_name(url):
+    if not url:
+        return ""
+
+    return url.split("/")[-1].split("?")[0]
+
+
+def collect_product_urls(category_url):
+    urls = set()
+
+    soup = get_soup(category_url)
+
+    if not soup:
+        return []
+
+    for link in soup.select("a[href]"):
+        href = link.get("href")
+
+        if not href:
+            continue
+
+        url = urljoin(BASE_URL, href)
+
+        if "/product/" in url or "/p/" in url:
+            urls.add(url)
+
+    return list(urls)
+
+
+def parse_breadcrumb(soup):
+    items = []
+
+    for el in soup.select(
+        ".breadcrumb a, .breadcrumbs a, nav.breadcrumb a"
+    ):
+        items.append(clean_text(el))
+
+    return " > ".join(items)
+
+
+def parse_product(url):
+    soup = get_soup(url)
+
+    if not soup:
+        return None
+
+    data = {
+        "URL": url,
+        "Breadcrumb": "",
+        "Title": "",
+        "Short description": "",
+        "imageurl": "",
+        "image_name": "",
+        "Price": "",
+        "Sale price": "",
+        "Description": "",
+        "Specs": "",
+        "Spec_detail": "",
     }
 
-    for attempt in range(RETRY_COUNT):
-        try:
-            response = requests.get(
-                url,
-                headers=headers,
-                timeout=TIMEOUT,
-                allow_redirects=True
+    try:
+        data["Breadcrumb"] = parse_breadcrumb(soup)
+
+        title = soup.select_one(
+            "h1.product-title, h1.entry-title, h1"
+        )
+        data["Title"] = clean_text(title)
+
+        short_desc = soup.select_one(
+            ".short-description, .product-summary, .excerpt"
+        )
+        data["Short description"] = clean_text(short_desc)
+
+        image = soup.select_one(
+            "img.product-image, .woocommerce-product-gallery img, img"
+        )
+
+        if image:
+            image_url = (
+                image.get("data-large_image")
+                or image.get("data-src")
+                or image.get("src")
             )
-            response.raise_for_status()
-            response.encoding = "utf-8"
-            return response.text
 
-        except requests.exceptions.Timeout:
-            print(f"[{__file__}] Таймаут при загрузке {url} (попытка {attempt + 1}/{RETRY_COUNT})")
-            if attempt < RETRY_COUNT - 1:
-                time.sleep(2 ** attempt)
-            continue
+            if image_url:
+                image_url = urljoin(BASE_URL, image_url)
 
-        except requests.exceptions.HTTPError as e:
-            if e.response.status_code == 403:
-                print(f"[{__file__}] Ошибка 403 (доступ запрещен) при загрузке {url}")
-                return None
-            print(f"[{__file__}] HTTP ошибка {e.response.status_code} при загрузке {url}")
-            if attempt < RETRY_COUNT - 1:
-                time.sleep(2 ** attempt)
-            continue
+                data["imageurl"] = image_url
+                data["image_name"] = extract_image_name(
+                    image_url
+                )
 
-        except Exception as e:
-            print(f"[{__file__}] Ошибка при загрузке {url}: {e}")
-            if attempt < RETRY_COUNT - 1:
-                time.sleep(2 ** attempt)
-            continue
+        price = soup.select_one(
+            ".price, .product-price, .woocommerce-Price-amount"
+        )
 
-    print(f"[{__file__}] Не удалось загрузить {url} после {RETRY_COUNT} попыток")
-    return None
+        data["Price"] = normalize_price(clean_text(price))
 
+        sale = soup.select_one(
+            ".sale-price, .onsale, ins"
+        )
 
-def fetch_product_page(url: str) -> Optional[str]:
-    """
-    Получить HTML страницы товара.
+        data["Sale price"] = normalize_price(clean_text(sale))
 
-    Args:
-        url: URL страницы товара
+        description = soup.select_one(
+            ".description, .product-description, .woocommerce-product-details__short-description"
+        )
 
-    Returns:
-        str: HTML страницы товара или None при ошибке
-    """
-    return fetch_listing_page(url)
+        data["Description"] = clean_text(description)
 
+        specs = []
 
-def get_product_urls_from_listing(html: str) -> List[str]:
-    """
-    Извлечь URL товаров из HTML страницы категории.
+        for row in soup.select(
+            "table tr, .specifications tr, .attributes tr"
+        ):
+            cols = row.find_all(["td", "th"])
 
-    Args:
-        html: HTML страницы категории
+            if len(cols) >= 2:
+                key = clean_text(cols[0])
+                value = clean_text(cols[1])
 
-    Returns:
-        List[str]: Список URL товаров
-    """
-    if not html:
-        return []
+                if key and value:
+                    specs.append(
+                        f"{key}: {value}"
+                    )
 
-    try:
-        soup = BeautifulSoup(html, "html.parser")
-        product_urls = []
+        data["Specs"] = " | ".join(specs)
+        data["Spec_detail"] = "\n".join(specs)
 
-        # Ищем все элементы с классом "item" (как в предоставленном HTML)
-        items = soup.find_all("li", class_="item")
-
-        for item in items:
-            # Ищем ссылку внутри блока product-image-wrapper или h2.product-name
-            link = item.find("a", class_="product-image")
-            if not link:
-                # Пробуем найти ссылку в заголовке
-                title_link = item.find("h2", class_="product-name")
-                if title_link:
-                    link = title_link.find("a")
-
-            if link and link.get("href"):
-                url = link.get("href")
-                # Преобразуем относительный URL в абсолютный
-                if url.startswith("/"):
-                    url = "https://www.professionele-koeling.nl" + url
-                product_urls.append(url)
-
-        print(f"[{__file__}] Найдено {len(product_urls)} товаров на странице")
-        return product_urls
+        return data
 
     except Exception as e:
-        print(f"[{__file__}] Ошибка при извлечении URL товаров: {e}")
-        return []
-
-
-def get_next_page_url(html: str, current_url: str) -> Optional[str]:
-    """
-    Определить URL следующей страницы пагинации.
-
-    Args:
-        html: HTML текущей страницы
-        current_url: URL текущей страницы (для построения абсолютных ссылок)
-
-    Returns:
-        str: URL следующей страницы или None
-    """
-    if not html:
-        return None
-
-    try:
-        soup = BeautifulSoup(html, "html.parser")
-
-        # Ищем ссылку "Next" или "Следующая"
-        # На сайте могут быть разные варианты пагинации
-        next_link = None
-
-        # Вариант 1: пагинация с классом "next"
-        next_link = soup.find("a", class_="next")
-        if not next_link:
-            # Вариант 2: любой элемент с текстом "Next" или "Следующая"
-            for link in soup.find_all("a"):
-                if link.get_text(strip=True).lower() in ["next", "следующая", "следующая страница", "›", "»"]:
-                    next_link = link
-                    break
-
-        if next_link and next_link.get("href"):
-            url = next_link.get("href")
-            if url.startswith("/"):
-                url = "https://www.professionele-koeling.nl" + url
-            return url
-
-        return None
-
-    except Exception as e:
-        print(f"[{__file__}] Ошибка при поиске следующей страницы: {e}")
+        print(f"Parse error {url}: {e}")
         return None
 
 
-def fetch_all_product_pages(start_url: str) -> List[str]:
-    """
-    Оркестрация обхода сайта: загружает все страницы категории и все карточки товаров.
+def scrape(limit=None):
+    product_urls = set()
 
-    Алгоритм:
-    1. Загрузить HTML страницы категории
-    2. Извлечь URL товаров
-    3. Для каждого URL товара загрузить HTML
-    4. Если есть следующая страница категории, перейти на неё и повторить
+    for category in CATEGORY_URLS:
+        print(f"Category: {category}")
 
-    Args:
-        start_url: URL начальной страницы категории
+        urls = collect_product_urls(category)
 
-    Returns:
-        List[str]: Список HTML страниц товаров
-    """
-    product_htmls = []
-    current_url = start_url
-    page_number = 1
-    seen_urls = set()
+        product_urls.update(urls)
 
-    print(f"[{__file__}] Начало сбора данных с {start_url}")
-
-    while current_url:
-        print(f"[{__file__}] Загрузка страницы категории #{page_number}: {current_url}")
-
-        # Загружаем страницу категории
-        listing_html = fetch_listing_page(current_url)
-        if not listing_html:
-            print(f"[{__file__}] Не удалось загрузить страницу категории {current_url}")
+        if limit and len(product_urls) >= limit:
             break
 
-        # Извлекаем URL товаров
-        product_urls = get_product_urls_from_listing(listing_html)
+    product_urls = list(product_urls)
 
-        if not product_urls:
-            print(f"[{__file__}] На странице не найдено товаров")
-            break
+    if limit:
+        product_urls = product_urls[:limit]
 
-        print(f"[{__file__}] Найдено {len(product_urls)} товаров на странице #{page_number}")
+    print(f"Found products: {len(product_urls)}")
 
-        # Загружаем каждую карточку товара
-        for idx, product_url in enumerate(product_urls, 1):
-            if product_url in seen_urls:
-                continue
-            seen_urls.add(product_url)
+    products = []
 
-            print(f"[{__file__}] Загрузка товара {idx}/{len(product_urls)}: {product_url}")
+    for index, url in enumerate(product_urls, 1):
+        print(
+            f"[{index}/{len(product_urls)}] {url}"
+        )
 
-            # Задержка между запросами товаров
-            if idx > 1:
-                random_delay(1.0, 2.5)
+        item = parse_product(url)
 
-            product_html = fetch_product_page(product_url)
-            if product_html:
-                product_htmls.append(product_html)
-            else:
-                print(f"[{__file__}] Не удалось загрузить товар {product_url}")
+        if item:
+            products.append(item)
 
-        # Ищем следующую страницу
-        next_url = get_next_page_url(listing_html, current_url)
-        if next_url and next_url != current_url:
-            current_url = next_url
-            page_number += 1
+        time.sleep(1)
 
-            # Задержка перед следующей страницей категории
-            random_delay(1.5, 3.0)
-        else:
-            print(f"[{__file__}] Достигнут конец пагинации")
-            break
-
-    print(f"[{__file__}] Сбор данных завершен. Собрано {len(product_htmls)} карточек товаров")
-    return product_htmls
+    return products
 
 
-def fetch_page_data(context=None) -> List[str]:
-    """
-    Главная точка входа для сбора данных, вызываемая из main.py.
+def save_csv(products):
+    if not products:
+        print("No products found")
+        return
 
-    Args:
-        context: Необязательный контекст браузера (для совместимости с main.py)
+    df = pd.DataFrame(products)
 
-    Returns:
-        List[str]: Список HTML страниц товаров
-    """
-    print(f"[{__file__}] Запуск сбора данных...")
+    columns = [
+        "URL",
+        "Breadcrumb",
+        "Title",
+        "Short description",
+        "imageurl",
+        "image_name",
+        "Price",
+        "Sale price",
+        "Description",
+        "Specs",
+        "Spec_detail",
+    ]
 
-    # Стартовый URL категории koelkasten-kisten
-    start_url = "https://www.professionele-koeling.nl/koelkasten-kisten.html"
+    df = df.reindex(columns=columns)
 
-    try:
-        product_htmls = fetch_all_product_pages(start_url)
+    Path(OUTPUT_FILE).parent.mkdir(
+        parents=True,
+        exist_ok=True
+    )
 
-        if not product_htmls:
-            print(f"[{__file__}] Предупреждение: Не удалось собрать ни одной карточки товара")
-            return []
+    df.to_csv(
+        OUTPUT_FILE,
+        index=False,
+        encoding="utf-8-sig"
+    )
 
-        print(f"[{__file__}] Сбор данных завершен. Получено страниц: {len(product_htmls)}")
-        return product_htmls
+    print(
+        f"Saved {len(df)} products to {OUTPUT_FILE}"
+    )
 
-    except Exception as e:
-        print(f"[{__file__}] Критическая ошибка при сборе данных: {e}")
-        return []
+
+if __name__ == "__main__":
+    # First run: test with 2 products
+    products = scrape(limit=2)
+
+    save_csv(products)
