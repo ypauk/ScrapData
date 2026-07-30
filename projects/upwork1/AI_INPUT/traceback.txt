@@ -1,0 +1,33 @@
+$ python main.py
+======================================================================
+[C:\Users\user\Desktop\UPWORK-ALL\projects\upwork1\app\main.py] ЗАПУСК ПАРСЕРА
+======================================================================
+[C:\Users\user\Desktop\UPWORK-ALL\projects\upwork1\app\browser.py] Запуск Chromi
+um (Headless=False)...
+[2026-07-30 13:15:38] [INFO] Браузер запущен (headless=False)
+[2026-07-30 13:15:38] [INFO] ===================================================
+===================
+[2026-07-30 13:15:38] [INFO] Запуск scraper: сбор данных с professionele-koeling
+.nl
+[2026-07-30 13:15:38] [INFO] ===================================================
+===================
+[2026-07-30 13:15:38] [INFO] Начало обхода категории: https://www.professionele-
+koeling.nl/koelkasten-kisten.html
+[2026-07-30 13:15:38] [INFO] Загрузка страницы категории #1: https://www.profess
+ionele-koeling.nl/koelkasten-kisten.html
+[2026-07-30 13:15:38] [DEBUG] Запрос к https://www.professionele-koeling.nl/koelkasten-kisten.html (попытка 1/3)
+[2026-07-30 13:15:41] [WARNING] parse_listing: не найдены элементы с классом 'item'
+[2026-07-30 13:15:41] [WARNING] На странице https://www.professionele-koeling.nl/koelkasten-kisten.html не найдено товаров
+[2026-07-30 13:15:41] [INFO] Найдено 0 товаров на странице 1
+C:\Users\user\AppData\Local\Programs\Python\Python313\Lib\site-packages\soupsieve\css_parser.py:876: FutureWarning: The pseudo class ':contains' is d
+eprecated, ':-soup-contains' should be used moving forward.
+  warnings.warn(  # noqa: B028
+[2026-07-30 13:15:41] [INFO] Достигнут конец пагинации
+[2026-07-30 13:15:41] [INFO] Обход завершён. Всего загружено 0 товаров
+[2026-07-30 13:15:41] [INFO] ======================================================================
+[2026-07-30 13:15:41] [INFO] Сбор данных завершён. Получено 0 страниц товаров
+[2026-07-30 13:15:41] [INFO] ======================================================================
+[C:\Users\user\Desktop\UPWORK-ALL\projects\upwork1\app\main.py] Критическая ошибка: Нечего парсить (список страниц пуст).
+[C:\Users\user\Desktop\UPWORK-ALL\projects\upwork1\app\cookie_manager.py] Куки сохранены в cookies.json (Всего: 0)
+[2026-07-30 13:15:42] [INFO] Браузер закрыт
+
