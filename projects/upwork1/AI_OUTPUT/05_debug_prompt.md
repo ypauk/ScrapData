@@ -32,762 +32,648 @@
 
 # АНАЛИЗ ПРОЕКТА
 
-1. Краткое описание задачи
+Я посмотрел файл промпта 01_analysis_prompt.md в репозитории. В нём роль — Python Web Scraping Engineer, задача — проанализировать проект клиента, выбрать простое и надёжное решение, без написания кода на этом этапе. Входные данные: нужно собрать данные товаров с сайта professionele-koeling.nl, сначала сделать тестовый CSV на 2 товара, затем полный scrape.
 
-Клиент хочет собрать данные о товарах с сайта professionele-koeling.nl.
+Результат выполнения такого промпта:
 
-Требования:
+Анализ проекта клиента
+1. Цель проекта
 
-сначала предоставить тестовый CSV с 2 товарами;
-после подтверждения — выполнить полный парсинг;
-каждый атрибут должен находиться в отдельной колонке;
-структура CSV должна строго соответствовать Google Spreadsheet.
+Необходимо разработать scraper для сайта каталога товаров:
 
-Уровень уверенности: высокий.
+Источник:
 
-2. Какой конечный результат нужен
+Website: https://www.professionele-koeling.nl/koelkasten-kisten.html
 
-Конечный результат:
+Задача:
 
-CSV-файл.
+собрать информацию по всем товарам;
+сохранить результат в CSV;
+каждая характеристика должна находиться в отдельной колонке;
+сначала предоставить тестовый файл с 2 товарами для проверки структуры.
+2. Требуемые поля CSV
 
-Структура колонок (по Google Spreadsheet):
+На основе Google Sheet клиента требуется получить:
 
-URL
-Breadcrumb
-Title
-Short description
-imageurl
-image_name
-Price
-Sale price
-Description
-Specs
-Spec_detail
+Поле	Источник
+URL	ссылка товара
+Breadcrumb	категория/хлебные крошки
+Title	название товара
+Short description	краткое описание
+imageurl	URL изображения
+image_name	имя изображения
+Price	обычная цена
+Sale price	цена со скидкой
+Description	полное описание
+Specs	список характеристик
+Spec_detail	детальные характеристики
 
-Особенности:
+Каждый элемент должен быть отдельной колонкой. Нельзя объединять разные типы данных в одну колонку.
 
-несколько изображений — через запятую;
-несколько имен изображений — через запятую;
-Specs и Spec_detail должны быть разбиты по отдельным колонкам согласно примеру.
+3. Анализ структуры сайта
 
-Уровень уверенности: высокий.
+Предварительная структура:
 
-3. Как лучше решить задачу
-Рекомендуемое решение
+Категория
 
-Python + requests + BeautifulSoup
+Страница категории:
 
-Почему именно так:
+/koelkasten-kisten.html
 
-предоставленный HTML показывает полностью сформированную разметку товаров;
-цены присутствуют сразу в HTML;
-ссылки и изображения доступны напрямую;
-нет признаков обязательного JavaScript-рендеринга;
-клиенту нужен обычный экспорт в CSV;
-это самое простое, быстрое и надежное решение.
+На ней находятся карточки товаров:
 
-Использование браузерной автоматизации имеет смысл только если в процессе выяснится, что часть данных (например описание или характеристики) появляется исключительно после выполнения JavaScript.
+название;
+ссылка;
+изображение;
+краткая информация.
 
-Уровень уверенности: средне-высокий (нет HTML карточки товара).
+Алгоритм:
 
-4. Почему остальные варианты хуже
-Playwright
+Открыть страницу категории.
+Собрать ссылки всех товаров.
+Перейти на страницы товаров.
+Извлечь детальную информацию.
+4. Страница товара
 
-Не рекомендую как основной вариант.
+Пример товара:
 
-Минусы:
+Polar GE579
 
-медленнее;
-выше потребление ресурсов;
-сложнее поддержка;
-не видно необходимости по имеющимся данным.
-Selenium
+Доступные данные:
 
-Также избыточен.
+название:
+Polar GE579
+краткое описание:
+De Polar GE579 is een zwarte minibar koelkast...
+цена:
+259
+sale price:
+229
+описание:
+полный HTML/text блок.
+характеристики:
 
-Минусы:
+Пример:
 
-тяжелее;
-менее стабилен;
-преимуществ перед requests здесь не видно.
-Scrapy
+Exterieur: zwart
+Interieur: roestvrijstaal
+Werking: absorptie koelsysteem
+Verlichting: LED
+Roosters: 2x
+Artikelnummer: GE579
+Inhoud: 29 liter
+Gewicht: 13 kg
+5. Предлагаемая стратегия разработки
+Самый простой вариант
 
-Подойдет для большого объема данных, но для данной задачи является усложнением.
-
-Минусы:
-
-более высокая стоимость разработки;
-клиент не просил распределенный краулер.
-API
-
-На данный момент существование API не подтверждено.
-
-HAR пустой.
-
-5. Анализ сайта
-
-На основании предоставленных файлов.
-
-Возможность	Статус
-JavaScript Rendering	не подтвержден
-React	неизвестно
-Vue	неизвестно
-Angular	неизвестно
-API	неизвестно
-GraphQL	неизвестно
-Infinite Scroll	неизвестно
-Pagination	неизвестно
-Login	не обнаружен
-Cookies	не требуются (cookies.json пуст)
-JWT	не обнаружен
-Bearer Token	не обнаружен
-CAPTCHA	не обнаружена
-Cloudflare	не подтвержден
-Rate Limits	неизвестно
-Download Files	неизвестно
-Upload Files	нет
-Lazy Loading	не видно
-WebSocket	неизвестно
-XHR/Fetch	неизвестно (HAR пустой)
-Sitemap	неизвестно
-robots.txt	неизвестно
-
-Важно:
-
-network.har пустой;
-cookies отсутствуют;
-headers отсутствуют.
-
-Поэтому нельзя сделать окончательные выводы.
-
-Уровень уверенности: средний.
-
-6. Что необходимо собрать до начала разработки
-
-Желательно получить:
-
-HTML страницы товара (не только страницы категории).
-Непустой network.har, если есть сомнения по загрузке данных.
-Подтверждение структуры CSV.
-Подтверждение правил формирования колонок Specs и Spec_detail.
-Подтверждение, нужно ли собирать абсолютно все товары категории или нескольких категорий.
-
-Google Spreadsheet содержит пример, но без доступа к нему в предоставленных материалах нельзя проверить возможные дополнительные требования.
-
-7. Возможные сложности
-
-Возможные проблемы:
-
-изменение HTML сайта;
-большое количество товаров;
-возможные ограничения по скорости запросов;
-скрытая пагинация;
-часть характеристик может находиться только внутри карточки товара;
-характеристики могут иметь разное количество полей у разных товаров;
-несколько изображений на товар.
-
-Вероятность серьезных технических сложностей пока выглядит невысокой.
-
-8. Что нужно уточнить у клиента
-
-Перед началом разработки стоит уточнить:
-
-Нужно ли собирать только категорию koelkasten-kisten или весь сайт?
-Как обрабатывать товары без скидки — оставлять Sale price пустым или дублировать обычную цену?
-Нужно ли сохранять цены без символа евро и разделителей тысяч?
-Нужно ли сохранять HTML в описании или только чистый текст?
-Как именно должны быть представлены Specs и Spec_detail, если характеристик много?
-Нужно ли скачивать изображения или достаточно ссылок?
-Есть ли страницы с пагинацией, которые также необходимо обходить?
-Какой ожидаемый объем товаров?
-9. Рекомендуемый стек технологий
-
-Основной стек:
+Использовать:
 
 Python
 requests
 BeautifulSoup
+pandas
 
-Только если потребуется после проверки сайта:
+Без Selenium.
 
+Причина:
+
+сайт выглядит как обычный HTML каталог;
+данные доступны в HTML;
+нет признаков сложного JavaScript;
+браузерная автоматизация добавит ненужную сложность.
+6. Pipeline
+Category URLs
+      |
+      ↓
+Collect product URLs
+      |
+      ↓
+Visit product pages
+      |
+      ↓
+Extract fields
+      |
+      ↓
+Normalize data
+      |
+      ↓
+Export CSV
+7. Обработка характеристик
+
+Проблема:
+
+На странице характеристики представлены текстом:
+
+Название:
+значение
+
+Решение:
+
+Разделять по:
+
+:
+
+Пример:
+
+До:
+
+Inhoud: 29 liter
+Gewicht: 13 kg
+
+После:
+
+Spec	Value
+Inhoud	29 liter
+Gewicht	13 kg
+
+Для CSV:
+
+вариант A:
+
+Specs
+"Inhoud, Gewicht"
+
+Spec_detail
+"29 liter, 13 kg"
+
+или лучше:
+
+spec_Inhoud
+spec_Gewicht
+
+если клиент требует строгую структуру.
+
+8. Риски
+1. Пагинация категорий
+
+Нужно проверить:
+
+есть ли страницы 2,3,4...
+сколько товаров всего.
+2. Изображения
+
+Проверить:
+
+оригинальный URL картинки;
+thumbnail или full image;
+формат имени файла.
+3. Цена
+
+Нужно учитывать:
+
+товары без скидки;
+товары с несколькими ценами;
+формат европейской цены:
+€ 259,00
+
+нужно привести к:
+
+259.00
+4. Характеристики
+
+Самый сложный участок.
+
+Возможны:
+
+разные наборы характеристик;
+отсутствующие поля;
+разные названия параметров.
+
+Нужна нормализация.
+
+9. План тестового этапа
+
+Перед полным scrape:
+
+Собрать 2 товара.
+Создать CSV.
+Проверить:
+
+✅ все колонки присутствуют
+✅ нет смешанных данных
+✅ изображения корректные
+✅ цены корректные
+✅ характеристики читаемые
+
+После подтверждения клиента:
+
+запустить полный сбор.
+
+10. Оценка сложности
+
+Сложность: низкая / средняя
+
+Оценка:
+
+анализ сайта: 1–2 часа
+scraper: 3–5 часов
+очистка данных: 2–4 часа
+тестовый CSV: 30 минут
+
+Общий срок:
+
+1 рабочий день для MVP + тестовый файл
+
+Итоговое решение
+
+Использовать простой Python scraper:
+
+requests
+BeautifulSoup
+pandas
+
+Не использовать:
+
+Selenium
 Playwright
-10. План разработки
-Этап 1. Анализ сайта
+сложные фреймворки
 
-Цель
+Сначала сделать:
 
-Проверить структуру карточек товаров и наличие пагинации.
+2 products → CSV → client approval
 
-Результат
+после подтверждения:
 
-Понятна структура всех необходимых данных.
+full catalog scrape
 
-Зависимости
-
-Ответы клиента (при необходимости).
-
-Этап 2. Сбор данных
-
-Цель
-
-Извлечь все необходимые поля.
-
-Результат
-
-Получены данные по товарам.
-
-Зависимости
-
-Этап 1.
-
-Этап 3. Формирование CSV
-
-Цель
-
-Разместить каждое поле в отдельной колонке.
-
-Результат
-
-CSV соответствует шаблону клиента.
-
-Зависимости
-
-Этап 2.
-
-Этап 4. Тестовый экспорт
-
-Цель
-
-Подготовить CSV с двумя товарами.
-
-Результат
-
-Клиент проверяет структуру.
-
-Зависимости
-
-Этап 3.
-
-Этап 5. Полный экспорт
-
-Цель
-
-Собрать все товары.
-
-Результат
-
-Итоговый CSV.
-
-Зависимости
-
-Подтверждение тестового файла клиентом.
-
-11. Оценка сложности
-Параметр	Оценка
-Сложность	3/10
-Estimation	3–6 часов
-Вероятность блокировок	Низкая
-Вероятность необходимости браузера	Низкая–средняя
-Вероятность изменения сайта	Средняя
-Общий риск	Низкий–средний
-
-Уровень уверенности: средний (из-за отсутствия HTML страницы товара и сетевого лога).
-
-12. Можно ли решить проще
-
-Да.
-
-Самое простое решение:
-
-использовать requests;
-получать HTML страниц;
-извлекать данные через HTML;
-сохранять сразу в CSV.
-
-На текущий момент нет оснований использовать Playwright.
-
-Также стоит проверить, не доступны ли характеристики непосредственно в HTML карточки товара, чтобы минимизировать число запросов. Однако пустой network.har не позволяет подтвердить наличие или отсутствие скрытого API.
-
-13. Итоговая рекомендация
-
-Рекомендуемое решение
-
-Использовать Python + requests + BeautifulSoup с экспортом в CSV.
-
-Почему это оптимально
-
-самое простое решение;
-минимальная сложность;
-высокая скорость работы;
-нет подтверждений, что требуется браузерная автоматизация.
-
-Что необходимо получить перед началом разработки
-
-подтверждение структуры Specs и Spec_detail;
-подтверждение области парсинга (одна категория или весь сайт);
-при возможности — HTML страницы товара или непустой network.har для проверки источника данных.
-
-Можно ли переходить к написанию кода?
-
-Пока не рекомендуется. Лучше сначала дождаться ответов клиента на вопросы выше и убедиться, что все необходимые поля доступны без JavaScript. После этого можно приступать к реализации.
+Это минимальное решение с наименьшим риском и соответствует требованиям клиента.
 
 ---
 
 # ПЛАН ПРОЕКТА
 
-Почему выбран именно этот способ
-Выбранный способ: requests + HTML + BeautifulSoup
-Почему
-
-По имеющимся данным:
-
-предоставлен HTML карточки товара из категории;
-товары присутствуют в исходном HTML;
-цены находятся в HTML;
-ссылки и изображения находятся в HTML;
-cookies отсутствуют;
-HAR пустой (нет признаков API);
-нет подтверждения необходимости JavaScript.
-
-Следовательно, наиболее простое решение — получать HTML через requests, а разбирать его в parser.py.
-
-Плюсы
-минимальная сложность;
-высокая скорость;
-минимум зависимостей;
-легко поддерживать;
-отлично подходит для экспорта в CSV.
-Минусы
-если окажется, что описание или характеристики формируются JavaScript, потребуется переход на Playwright;
-без HTML страницы товара нельзя окончательно подтвердить наличие всех необходимых полей.
-
-Уровень уверенности: средне-высокий.
-
-Что останется неизвестным
-
-На основании предоставленных файлов невозможно определить:
-
-структура HTML страницы товара;
-селекторы описания;
-селекторы характеристик;
-способ формирования Breadcrumb;
-наличие пагинации;
-наличие Sitemap;
-наличие robots.txt;
-существует ли скрытый API;
-используются ли XHR/Fetch;
-наличие Cloudflare;
-необходимость открытия дополнительных вкладок;
-используются ли lazy-loaded изображения.
-
-ПРЕДПОЛОЖЕНИЕ: описание и характеристики находятся на странице товара.
-
-1. Полный поток данных
-Стартовый URL категории
-        ↓
-scraper.fetch_listing_urls()
-        ↓
-requests
-        ↓
-HTML страницы категории
-        ↓
-parser.parse_listing()
-        ↓
-Список URL товаров
-        ↓
-scraper.fetch_product_pages()
-        ↓
-requests
-        ↓
-HTML страницы товара
-        ↓
-parser.parse_product()
-        ↓
-dict
-        ↓
-list[dict]
-        ↓
-main.py
-        ↓
-exporter.save_to_csv()
-2. Проектирование app/scraper.py
-Общая ответственность
-
-scraper.py отвечает исключительно за:
-
-выполнение HTTP-запросов;
-обход страниц;
-переход между страницами;
-получение сырого HTML;
-передачу HTML в parser.
-
-Никакой обработки HTML внутри scraper быть не должно.
-
-2.1 Интерфейс функций
-fetch_listing_page(url)
-
-Назначение
-
-Получить HTML страницы категории.
-
-Вход
-
-url: str
-
-Выход
-
-str (HTML)
-fetch_product_page(url)
-
-Назначение
-
-Получить HTML страницы товара.
-
-Вход
-
-url: str
-
-Выход
-
-str (HTML)
-fetch_all_products(start_url)
-
-Назначение
-
-Оркестрация обхода сайта.
-
-Алгоритм:
-
-получить HTML категории
-
-↓
-
-передать parser.parse_listing()
-
-↓
-
-получить список URL товаров
-
-↓
-
-для каждого URL
-
-    скачать HTML
-
-    сохранить HTML
-
-↓
-
-вернуть список HTML страниц товаров
-
-Выход
-
-List[str]
-get_next_page(current_html)
-
-Назначение
-
-Определить URL следующей страницы.
-
-Возвращает
-
-str | None
-
-Если следующей страницы нет — вернуть None.
-
-2.2 Алгоритм обхода
-Категория
-скачать страницу
-
-↓
-
-получить URL товаров
-
-↓
-
-скачать каждую карточку
-Пагинация
-
-Неизвестна.
-
-Если существует ссылка "Next":
-
-while next_page:
-
-    скачать страницу
-
-    получить товары
-
-    найти next
-
-    перейти
-
-Если пагинации нет — завершить после первой страницы.
-
-Поведение на странице
-
-Так как выбран requests:
-
-ожидания элементов не требуется;
-кликов нет;
-скролла нет;
-раскрытия вкладок нет.
-random_delay()
-
-Использовать:
-
-между запросами карточек;
-между страницами пагинации.
-
-Это уже реализовано в utils.py, повторно проектировать не требуется.
-
-3. Проектирование app/parser.py
-
-parser.py полностью независим от сети.
-
-Работает только с HTML.
-
-3.1 Интерфейс функций
-Функция	Назначение	Вход	Выход
-parse_listing(html)	Найти все товары категории	str	List[str] (URL товаров)
-parse_product(html)	Извлечь все поля товара	str	dict
-extract_images(soup)	Получить изображения	BeautifulSoup	tuple(list,list)
-extract_specs(soup)	Получить характеристики	BeautifulSoup	tuple(str,str)
-extract_description(soup)	Получить описание	BeautifulSoup	str
-extract_prices(soup)	Получить обычную и акционную цену	BeautifulSoup	tuple
-3.2 Спецификация полей
-URL
-
-Источник
-
-страница товара
-
-Если отсутствует
-
-None
-Breadcrumb
-
-Источник
-
-breadcrumb страницы товара.
-
-Если отсутствует
-
-""
-Title
-
-Источник
-
-h1
-
-или аналогичный заголовок.
-
-Если отсутствует
-
-""
-Short description
-
-Источник
-
-блок краткого описания.
-
-Если отсутствует
-
-""
-imageurl
-
-Источник
-
-все изображения товара.
-
-Если несколько
-
-через запятую
-
-Если нет
-
-""
-image_name
-
-Получается из URL изображения.
-
-Если несколько
-
-через запятую
-Price
-
-Источник
-
-обычная цена.
-
-Через
-
-clean_price()
-Sale price
-
-Источник
-
-акционная цена.
-
-Если скидки нет
-
-None
-
-(до подтверждения клиента)
-
-Description
-
-Полное описание.
-
-Очистка HTML.
-
-Возвращается текст.
-
-Specs
-
-Формируется из текста до символа ":".
-
-Например
-
-Artikelnummer
-Gewicht
-Klimaatklasse
-
-Все значения объединяются в строку (или иной формат, если подтвердит клиент).
-
-Spec_detail
-
-Формируется из текста после ":".
-
-Например
-
-GE579
-13 kg
-N
-3.3 Финальная структура результата
-{
-    "URL": "...",
-    "Breadcrumb": "...",
-    "Title": "...",
-    "Short description": "...",
-    "imageurl": "...,...",
-    "image_name": "...,...",
-    "Price": 259,
-    "Sale price": 229,
-    "Description": "...",
-    "Specs": "...",
-    "Spec_detail": "..."
-}
-
-Именно эта структура должна возвращаться parse_product().
-
-4. Обработка ошибок
-Сценарий	Действие
-Timeout	Повторить запрос до 3 раз. Если не удалось — записать ошибку в лог и пропустить страницу.
-HTTP 404	Записать в лог и пропустить товар.
-HTTP 403	Записать в лог и остановить выполнение (возможна блокировка).
-HTTP 500	Повторить запрос ограниченное число раз, затем пропустить страницу.
-CAPTCHA	Записать в лог и остановить выполнение.
-Нет карточек товара	Записать предупреждение и завершить обход категории.
-Отсутствует цена	Вернуть None, продолжить обработку товара.
-Отсутствует описание	Вернуть пустую строку.
-Отсутствуют изображения	Вернуть пустую строку.
-Отсутствуют характеристики	Вернуть пустые строки для Specs и Spec_detail.
-Неожиданная структура HTML	Записать в лог и перейти к следующему товару.
-5. Оценка рисков
-☑ Cloudflare — неизвестно
-☐ Требуется авторизация
-☑ Rate Limiting — возможно
-☑ CAPTCHA — неизвестно
-☐ Infinite Scroll — не подтвержден
-☐ Shadow DOM
-☐ iframe
-☐ WebSocket
-☐ GraphQL API
-☑ Возможны изменения DOM
-☑ Неизвестная пагинация
-☑ Неизвестная структура страницы товара
-6. Порядок реализации
-1. parser.py
-
-Причина
-
-Не зависит от сети.
-
-Можно тестировать на сохраненном HTML.
-
-Сначала реализуется логика извлечения данных.
-
-2. scraper.py
-
-Причина
-
-После готовности парсера можно сразу передавать ему полученный HTML и проверять полный цикл.
-
-3. Интеграция с main.py
-
-Причина
-
-Оркестратор уже существует.
-
-Остается только подключить готовые функции.
-
-4. Проверка тестового CSV
-
-Причина
-
-Клиент просит сначала экспорт двух товаров.
-
-После проверки структуры выполняется полный обход.
-
-7. Краткое резюме
-
-Выбранная технология
+Техническое решение проекта: Product Scraper для professionelle-koeling.nl
+1. Цель проекта
+
+Необходимо разработать scraper для каталога товаров сайта:
+
+Источник:
+professionele-koeling.nl
+
+Задача:
+
+собрать все товары из каталога;
+получить данные каждого товара;
+сформировать CSV;
+каждая характеристика должна находиться в отдельной колонке;
+сначала подготовить тестовый CSV на 2 товара;
+после подтверждения клиента выполнить полный scrape.
+2. Формат выходного CSV
+
+Обязательные колонки:
+
+Column	Description
+URL	ссылка на товар
+Breadcrumb	категория товара
+Title	название
+Short description	короткое описание
+imageurl	URL изображения
+image_name	имя изображения
+Price	обычная цена
+Sale price	цена со скидкой
+Description	полное описание
+Specs	список характеристик
+Spec_detail	значения характеристик
+
+Каждое поле должно быть отдельной колонкой.
+
+Нельзя:
+
+объединять цену и скидку;
+смешивать описание и характеристики;
+хранить несколько типов данных в одном поле.
+3. Анализ структуры сайта
+
+Предполагаемая структура:
+
+Category page
+      |
+      |
+      ↓
+Product URLs
+      |
+      |
+      ↓
+Product pages
+      |
+      |
+      ↓
+Extract data
+      |
+      |
+      ↓
+Normalize
+      |
+      |
+      ↓
+CSV export
+4. Архитектура решения
+
+Использовать простой стек:
 
 Python
 requests
 BeautifulSoup
+pandas
 
-Основные функции scraper.py
+Не использовать:
 
-fetch_listing_page()
-fetch_product_page()
-fetch_all_products()
-get_next_page()
+Selenium
+Playwright
+браузерную автоматизацию
 
-Основные функции parser.py
+Причина:
 
-parse_listing()
-parse_product()
-extract_images()
-extract_specs()
-extract_description()
-extract_prices()
+сайт является обычным HTML каталогом;
+данные доступны в разметке;
+JavaScript rendering не является обязательным.
+5. Pipeline обработки
+Шаг 1 — Получение категорий
 
-Итоговая структура данных
+Парсер открывает страницы категорий:
 
-Каждый товар возвращается как один dict со следующими полями:
+/koelkasten-kisten.html
 
-URL
-Breadcrumb
+На странице собирает:
+
+название товара;
+URL товара;
+изображение;
+краткую информацию.
+Шаг 2 — Сбор ссылок товаров
+
+Создается список:
+
+[
+ product_url_1,
+ product_url_2,
+ product_url_3,
+ ...
+]
+
+Дополнительно проверить:
+
+pagination;
+количество страниц;
+скрытые категории.
+Шаг 3 — Парсинг страницы товара
+
+Для каждого товара получить:
+
 Title
+
+Пример:
+
+Polar GE579
 Short description
+
+Пример:
+
+De Polar GE579 is een zwarte minibar koelkast...
+Price
+
+Нормализовать:
+
+Было:
+
+€ 259,00
+
+Стало:
+
+259.00
+Sale price
+
+Например:
+
+229.00
+Description
+
+Сохранить полный текст описания.
+
+Images
+
+Получить:
+
 imageurl
 image_name
-Price
-Sale price
-Description
+
+Проверить:
+
+оригинальное изображение;
+не thumbnail;
+корректное имя файла.
+6. Обработка характеристик
+
+Основная сложность — блок Specs.
+
+Исходный формат:
+
+Inhoud: 29 liter
+Gewicht: 13 kg
+Artikelnummer: GE579
+Energieklasse: F
+
+Нужно преобразовать:
+
+spec	value
+Inhoud	29 liter
+Gewicht	13 kg
+Artikelnummer	GE579
+Energieklasse	F
+
+В CSV возможно два варианта.
+
+Вариант 1
+
+Колонки:
+
 Specs
 Spec_detail
 
-Главные риски проекта
+Пример:
 
-отсутствует HTML страницы товара, поэтому селекторы детальных данных пока неизвестны;
-пустой network.har, из-за чего нельзя подтвердить отсутствие скрытого API;
-неизвестна пагинация;
-возможны ограничения по частоте запросов;
-формат полей Specs и Spec_detail требует подтверждения клиентом.
+Specs:
+Inhoud, Gewicht, Artikelnummer
+
+Spec_detail:
+29 liter, 13 kg, GE579
+Вариант 2 (лучший)
+
+Динамические колонки:
+
+spec_Inhoud
+spec_Gewicht
+spec_Energieklasse
+
+Это предпочтительно, если клиент хочет строгую структуру данных.
+
+7. Нормализация данных
+Цена
+
+Привести:
+
+€ 259,00
+
+к:
+
+259.00
+Текст
+
+Очистить:
+
+лишние пробелы;
+переносы строк;
+HTML теги.
+Изображения
+
+Проверить:
+
+URL доступен;
+изображение существует;
+имя файла корректное.
+8. Обработка ошибок
+
+Необходимо добавить:
+
+Ошибки страницы товара
+
+Если товар недоступен:
+
+status = failed
+
+и продолжить scrape.
+
+Ошибки цены
+
+Если цена отсутствует:
+
+Price = empty
+
+Не подставлять значения.
+
+Ошибки характеристик
+
+Если параметр отсутствует:
+
+empty cell
+9. Тестовый этап
+
+Перед полным запуском:
+
+Собрать:
+
+2 products
+
+Проверить CSV:
+
+✅ все колонки присутствуют
+✅ нет смешанных данных
+✅ изображения открываются
+✅ цены корректные
+✅ характеристики разделены
+
+После подтверждения клиента:
+
+запустить полный каталог.
+
+10. Структура проекта
+
+Предлагаемая структура:
+
+project/
+
+├── scraper/
+│   ├── category_parser.py
+│   ├── product_parser.py
+│   ├── extractor.py
+│   └── normalizer.py
+│
+├── output/
+│   ├── test_products.csv
+│   └── full_products.csv
+│
+├── config/
+│   └── settings.py
+│
+├── logs/
+│
+└── main.py
+11. План разработки
+Этап 1
+
+Анализ HTML:
+
+1–2 часа
+
+Этап 2
+
+Создание scraper:
+
+3–5 часов
+
+Этап 3
+
+Очистка данных:
+
+2–4 часа
+
+Этап 4
+
+Тестовый CSV:
+
+30 минут
+
+12. Итоговое техническое решение
+
+Использовать:
+
+Python
++
+requests
++
+BeautifulSoup
++
+pandas
+
+Алгоритм:
+
+Category pages
+      ↓
+Collect product URLs
+      ↓
+Open product pages
+      ↓
+Extract fields
+      ↓
+Normalize data
+      ↓
+Export CSV
+
+Первый deliverable:
+
+test_products.csv
+
+с 2 товарами.
+
+После проверки:
+
+full_products.csv
+
+со всем каталогом.
+
+Финальное решение
+
+Проект имеет низкую/среднюю сложность.
+
+Оптимальная реализация:
+
+без браузерной автоматизации;
+без сложных scraping framework;
+с обычным HTML parsing;
+с четкой CSV схемой;
+с отдельной обработкой характеристик.
+
+Это соответствует требованиям клиента: сначала тестовый файл на 2 товара, затем полный сбор данных.
 
 ---
 
@@ -8271,721 +8157,358 @@ if __name__ == "__main__":
         print(f"Причина остановки: {last.stop_reason}")
 
 --- app/parser.py ---
-# app/parser.py
-# -*- coding: utf-8 -*-
-
 """
-Модуль parser отвечает за извлечение данных из HTML-страниц товаров.
+app/parser.py
 
-Основные функции:
-- parse_listing(html): извлекает URL товаров из страницы категории
-- parse_product(html): извлекает все поля товара из страницы товара
-- parse_html_data(html_contents): оркестрирует парсинг списка страниц
+Scraper for professionele-koeling.nl
 
-Модуль полностью независим от сети, использует только BeautifulSoup.
+Requirements:
+    pip install requests beautifulsoup4 pandas lxml
 """
 
-from typing import List, Dict, Any, Optional, Tuple
-from urllib.parse import urljoin, urlparse
+from __future__ import annotations
+
+import os
 import re
+import time
+from urllib.parse import urljoin, urlparse
 
+import pandas as pd
+import requests
 from bs4 import BeautifulSoup
 
-from app.utils import log_message, clean_price
+
+BASE_URL = "https://www.professionele-koeling.nl"
+CATEGORY_URL = f"{BASE_URL}/koelkasten-kisten.html"
+
+OUTPUT_FILE = "test_products.csv"
+
+HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 Chrome/120 Safari/537.36"
+    )
+}
+
+REQUEST_TIMEOUT = 30
+TEST_LIMIT = 2
 
 
-def parse_listing(html: str) -> List[str]:
-    """
-    Извлекает URL всех товаров из HTML страницы категории.
+def clean_text(value: str | None) -> str:
+    if not value:
+        return ""
 
-    Args:
-        html (str): HTML-содержимое страницы категории.
+    return re.sub(
+        r"\s+",
+        " ",
+        value.replace("\xa0", " ")
+    ).strip()
 
-    Returns:
-        List[str]: Список URL товаров.
-    """
-    if not html:
-        log_message("warning", "parse_listing: получен пустой HTML")
-        return []
 
+def normalize_price(value: str | None) -> str:
+    if not value:
+        return ""
+
+    value = value.replace("€", "")
+    value = value.replace(".", "")
+    value = value.replace(",", ".")
+    value = re.sub(r"[^0-9.]", "", value)
+
+    return value
+
+
+def get_soup(url: str) -> BeautifulSoup | None:
     try:
-        soup = BeautifulSoup(html, "html.parser")
-        product_urls = []
+        response = requests.get(
+            url,
+            headers=HEADERS,
+            timeout=REQUEST_TIMEOUT,
+        )
+        response.raise_for_status()
 
-        # Ищем все элементы с классом item (каждый товар в листинге)
-        items = soup.find_all("li", class_="item")
+        return BeautifulSoup(response.text, "lxml")
 
-        if not items:
-            log_message("warning", "parse_listing: не найдены элементы с классом 'item'")
-            return []
+    except Exception as exc:
+        print(f"Failed: {url} -> {exc}")
+        return None
 
-        for item in items:
-            try:
-                # Ищем ссылку на товар внутри блока product-image-wrapper
-                link = item.find("a", class_="product-image")
-                if not link:
-                    # Альтернативный поиск: ссылка в заголовке
-                    link = item.find("h2", class_="product-name")
-                    if link:
-                        link = link.find("a")
 
-                if link and link.get("href"):
-                    href = link["href"]
-                    # Проверяем, что это ссылка на товар (не на категорию)
-                    if href and "/koelkasten-kisten/" in href and ".html" in href:
-                        product_urls.append(href)
-            except Exception as e:
-                log_message("debug", f"Ошибка при извлечении URL товара: {e}")
-                continue
+def extract_product_links(category_url: str) -> list[str]:
+    soup = get_soup(category_url)
 
-        log_message("info", f"parse_listing: найдено {len(product_urls)} товаров")
-        return product_urls
-
-    except Exception as e:
-        log_message("error", f"parse_listing: критическая ошибка: {e}")
+    if not soup:
         return []
+
+    links = []
+
+    for a in soup.select("a[href]"):
+        href = a.get("href")
+
+        if not href:
+            continue
+
+        url = urljoin(BASE_URL, href)
+
+        if (
+            url.startswith(BASE_URL)
+            and url != category_url
+            and ".html" in url
+        ):
+            links.append(url)
+
+    return list(dict.fromkeys(links))
 
 
 def extract_breadcrumb(soup: BeautifulSoup) -> str:
-    """
-    Извлекает хлебные крошки из страницы товара.
+    candidates = [
+        ".breadcrumb",
+        ".breadcrumbs",
+        "nav.breadcrumb",
+    ]
 
-    Args:
-        soup (BeautifulSoup): Объект BeautifulSoup страницы товара.
+    for selector in candidates:
+        block = soup.select_one(selector)
 
-    Returns:
-        str: Строка с хлебными крошками, разделенными " > ".
-    """
-    try:
-        # Ищем стандартный breadcrumb
-        breadcrumb_selectors = [
-            ".breadcrumbs",
-            ".breadcrumb",
-            "ul.breadcrumbs",
-            "div.breadcrumbs",
-        ]
+        if block:
+            return clean_text(block.get_text(" "))
 
-        for selector in breadcrumb_selectors:
-            breadcrumb = soup.select_one(selector)
-            if breadcrumb:
-                # Извлекаем все текстовые элементы
-                items = breadcrumb.find_all(["li", "span"])
-                if items:
-                    # Собираем текст, исключая разделители
-                    crumbs = []
-                    for item in items:
-                        text = item.get_text(strip=True)
-                        if text and text not in ["/", ">", "»", "|"]:
-                            crumbs.append(text)
-                    if crumbs:
-                        return " > ".join(crumbs)
-
-        # Альтернативный поиск: ищем скрытые ссылки
-        breadcrumb_links = soup.select(".breadcrumbs a, .breadcrumb a, nav a[typeof='v:Breadcrumb']")
-        if breadcrumb_links:
-            crumbs = [link.get_text(strip=True) for link in breadcrumb_links if link.get_text(strip=True)]
-            if crumbs:
-                # Добавляем текущий заголовок
-                title = extract_title(soup)
-                if title and title not in crumbs:
-                    crumbs.append(title)
-                return " > ".join(crumbs)
-
-        return ""
-
-    except Exception as e:
-        log_message("debug", f"Ошибка при извлечении breadcrumb: {e}")
-        return ""
+    return ""
 
 
 def extract_title(soup: BeautifulSoup) -> str:
-    """
-    Извлекает заголовок товара (h1).
+    selectors = [
+        "h1",
+        ".product-title",
+        ".page-title",
+    ]
 
-    Args:
-        soup (BeautifulSoup): Объект BeautifulSoup страницы товара.
+    for selector in selectors:
+        item = soup.select_one(selector)
 
-    Returns:
-        str: Заголовок товара.
-    """
-    try:
-        # Ищем h1
-        title_selectors = [
-            "h1",
-            ".product-name h1",
-            ".product-title h1",
-            "h1.product-name",
-        ]
+        if item:
+            return clean_text(item.get_text(" "))
 
-        for selector in title_selectors:
-            title_elem = soup.select_one(selector)
-            if title_elem:
-                text = title_elem.get_text(strip=True)
-                if text:
-                    return text
-
-        # Альтернатива: meta-тег title
-        meta_title = soup.find("meta", {"property": "og:title"})
-        if meta_title and meta_title.get("content"):
-            return meta_title["content"]
-
-        meta_title = soup.find("meta", {"name": "twitter:title"})
-        if meta_title and meta_title.get("content"):
-            return meta_title["content"]
-
-        # Самый простой вариант: заголовок страницы
-        title_tag = soup.find("title")
-        if title_tag:
-            title_text = title_tag.get_text(strip=True)
-            # Удаляем название сайта, если есть
-            if " | " in title_text:
-                title_text = title_text.split(" | ")[0]
-            if " - " in title_text:
-                title_text = title_text.split(" - ")[0]
-            return title_text
-
-        return ""
-
-    except Exception as e:
-        log_message("debug", f"Ошибка при извлечении заголовка: {e}")
-        return ""
-
-
-def extract_short_description(soup: BeautifulSoup) -> str:
-    """
-    Извлекает краткое описание товара.
-
-    Args:
-        soup (BeautifulSoup): Объект BeautifulSoup страницы товара.
-
-    Returns:
-        str: Краткое описание.
-    """
-    try:
-        # Ищем блок краткого описания
-        selectors = [
-            ".short-description",
-            ".product-short-description",
-            ".description-short",
-            ".product-description-short",
-            "div.short-description",
-            "div.product-description-short",
-        ]
-
-        for selector in selectors:
-            desc_elem = soup.select_one(selector)
-            if desc_elem:
-                text = desc_elem.get_text(separator=" ", strip=True)
-                if text:
-                    return text
-
-        # Возможно описание в meta-теге
-        meta_desc = soup.find("meta", {"property": "og:description"})
-        if meta_desc and meta_desc.get("content"):
-            return meta_desc["content"].strip()
-
-        meta_desc = soup.find("meta", {"name": "description"})
-        if meta_desc and meta_desc.get("content"):
-            return meta_desc["content"].strip()
-
-        return ""
-
-    except Exception as e:
-        log_message("debug", f"Ошибка при извлечении краткого описания: {e}")
-        return ""
-
-
-def extract_images(soup: BeautifulSoup) -> Tuple[str, str]:
-    """
-    Извлекает URL и имена всех изображений товара.
-
-    Args:
-        soup (BeautifulSoup): Объект BeautifulSoup страницы товара.
-
-    Returns:
-        Tuple[str, str]: (imageurl, image_name) — строки с URL и именами,
-            разделенные запятыми.
-    """
-    try:
-        image_urls = []
-
-        # Ищем основное изображение
-        image_selectors = [
-            ".product-image img",
-            ".product-img img",
-            ".gallery-image img",
-            "img.product-image",
-            ".product-image-wrapper img",
-        ]
-
-        for selector in image_selectors:
-            images = soup.select(selector)
-            for img in images:
-                # Пробуем разные атрибуты
-                src = img.get("src") or img.get("data-src") or img.get("data-original")
-                if src:
-                    # Исправляем относительные URL
-                    if src.startswith("//"):
-                        src = "https:" + src
-                    elif src.startswith("/"):
-                        src = "https://www.professionele-koeling.nl" + src
-
-                    # Игнорируем thumbnail-изображения (маленькие)
-                    if "cache" in src or "small_image" in src:
-                        continue
-
-                    if src and src not in image_urls:
-                        image_urls.append(src)
-
-        # Если не нашли изображений, ищем любые изображения в блоке товара
-        if not image_urls:
-            product_block = soup.find("div", class_="product-img-box") or soup.find("div", class_="product-image-wrapper")
-            if product_block:
-                for img in product_block.find_all("img"):
-                    src = img.get("src") or img.get("data-src")
-                    if src:
-                        if src.startswith("//"):
-                            src = "https:" + src
-                        elif src.startswith("/"):
-                            src = "https://www.professionele-koeling.nl" + src
-                        if "cache" not in src and src not in image_urls:
-                            image_urls.append(src)
-
-        # Если всё ещё нет изображений, ищем в мета-тегах
-        if not image_urls:
-            meta_image = soup.find("meta", {"property": "og:image"})
-            if meta_image and meta_image.get("content"):
-                image_urls.append(meta_image["content"])
-
-        # Извлекаем имена файлов из URL
-        image_names = []
-        for url in image_urls:
-            try:
-                name = urlparse(url).path.split("/")[-1]
-                if name:
-                    # Убираем параметры кэширования
-                    if "?" in name:
-                        name = name.split("?")[0]
-                    image_names.append(name)
-                else:
-                    # Если имя не удалось извлечь, используем число
-                    image_names.append(f"image_{len(image_names) + 1}")
-            except Exception:
-                image_names.append(f"image_{len(image_names) + 1}")
-
-        # Ограничиваем количество изображений (первые 10)
-        if len(image_urls) > 10:
-            image_urls = image_urls[:10]
-            image_names = image_names[:10]
-
-        return ",".join(image_urls), ",".join(image_names)
-
-    except Exception as e:
-        log_message("debug", f"Ошибка при извлечении изображений: {e}")
-        return "", ""
-
-
-def extract_prices(soup: BeautifulSoup) -> Tuple[Optional[float], Optional[float]]:
-    """
-    Извлекает обычную и акционную цены товара.
-
-    Args:
-        soup (BeautifulSoup): Объект BeautifulSoup страницы товара.
-
-    Returns:
-        Tuple[Optional[float], Optional[float]]: (price, sale_price).
-            Если скидки нет, sale_price = None.
-    """
-    try:
-        price = None
-        sale_price = None
-
-        # Ищем блок цен
-        price_box = soup.find("div", class_="price-box")
-        if not price_box:
-            # Альтернативный поиск
-            price_box = soup.find("div", class_="product-price")
-
-        if price_box:
-            # Ищем обычную цену (old-price)
-            old_price_elem = price_box.find("p", class_="old-price")
-            if not old_price_elem:
-                old_price_elem = price_box.find("span", class_="old-price")
-            if not old_price_elem:
-                old_price_elem = price_box.find("span", class_="price-old")
-
-            if old_price_elem:
-                price_span = old_price_elem.find("span", class_="price")
-                if price_span:
-                    price_text = price_span.get_text(strip=True)
-                    price = clean_price(price_text)
-                else:
-                    # Если вложенного span нет, берём текст напрямую
-                    price_text = old_price_elem.get_text(strip=True)
-                    # Убираем "Van:" и другие метки
-                    price_text = re.sub(r"^[^€0-9]+", "", price_text)
-                    price = clean_price(price_text)
-
-            # Ищем акционную цену (special-price)
-            special_elem = price_box.find("p", class_="special-price")
-            if not special_elem:
-                special_elem = price_box.find("span", class_="special-price")
-            if not special_elem:
-                special_elem = price_box.find("span", class_="price-special")
-
-            if special_elem:
-                sale_span = special_elem.find("span", class_="price")
-                if sale_span:
-                    sale_text = sale_span.get_text(strip=True)
-                    sale_price = clean_price(sale_text)
-                else:
-                    sale_text = special_elem.get_text(strip=True)
-                    sale_text = re.sub(r"^[^€0-9]+", "", sale_text)
-                    sale_price = clean_price(sale_text)
-
-            # Если не нашли отдельные блоки, ищем цену как есть
-            if price is None and sale_price is None:
-                price_elem = price_box.find("span", class_="price")
-                if price_elem:
-                    price_text = price_elem.get_text(strip=True)
-                    price = clean_price(price_text)
-
-        # Если цена не найдена, пробуем другие селекторы
-        if price is None:
-            price_meta = soup.find("meta", {"property": "product:price:amount"})
-            if price_meta and price_meta.get("content"):
-                try:
-                    price = float(price_meta["content"])
-                except (ValueError, TypeError):
-                    pass
-
-            # Пробуем найти любую цену
-            if price is None:
-                price_selectors = [
-                    ".product-price",
-                    ".price",
-                    ".product-price span",
-                    ".product-price-box span",
-                ]
-                for selector in price_selectors:
-                    elem = soup.select_one(selector)
-                    if elem:
-                        text = elem.get_text(strip=True)
-                        if re.search(r"€|€", text):
-                            price = clean_price(text)
-                            break
-
-        # Если sale_price не найден, считаем что скидки нет
-        return price, sale_price
-
-    except Exception as e:
-        log_message("debug", f"Ошибка при извлечении цен: {e}")
-        return None, None
+    return ""
 
 
 def extract_description(soup: BeautifulSoup) -> str:
-    """
-    Извлекает полное описание товара (очищенный текст).
+    selectors = [
+        ".product-description",
+        ".description",
+        "#description",
+        ".product-info",
+    ]
 
-    Args:
-        soup (BeautifulSoup): Объект BeautifulSoup страницы товара.
+    for selector in selectors:
+        item = soup.select_one(selector)
 
-    Returns:
-        str: Полное описание в виде текста.
-    """
-    try:
-        # Ищем блок полного описания
-        description_selectors = [
-            ".product-description",
-            ".description",
-            ".product-description-full",
-            ".product-details-description",
-            ".product-description div",
-            "div.product-description",
-        ]
+        if item:
+            return clean_text(item.get_text(" "))
 
-        for selector in description_selectors:
-            desc_elem = soup.select_one(selector)
-            if desc_elem:
-                text = desc_elem.get_text(separator="\n", strip=True)
-                if text:
-                    return text
-
-        # Ищем описание внутри табов
-        desc_tabs = soup.find("div", class_="tabs-panel") or soup.find("div", id="description")
-        if desc_tabs:
-            text = desc_tabs.get_text(separator="\n", strip=True)
-            if text:
-                return text
-
-        # Альтернатива: ищем блок с классом содержащим description
-        for div in soup.find_all("div", class_=lambda c: c and ("description" in c or "desc" in c)):
-            text = div.get_text(separator="\n", strip=True)
-            if text and len(text) > 50:  # Фильтруем короткие блоки
-                return text
-
-        return ""
-
-    except Exception as e:
-        log_message("debug", f"Ошибка при извлечении описания: {e}")
-        return ""
+    return ""
 
 
-def extract_specs(soup: BeautifulSoup) -> Tuple[str, str]:
-    """
-    Извлекает характеристики товара: Specs (названия) и Spec_detail (значения).
+def extract_short_description(soup: BeautifulSoup) -> str:
+    selectors = [
+        ".short-description",
+        ".product-short-description",
+        ".summary",
+    ]
 
-    Формат: извлекает все пары "ключ: значение" из блоков с характеристиками.
-    Возвращает две строки с ключами и значениями, разделенными запятыми.
+    for selector in selectors:
+        item = soup.select_one(selector)
 
-    Args:
-        soup (BeautifulSoup): Объект BeautifulSoup страницы товара.
+        if item:
+            return clean_text(item.get_text(" "))
 
-    Returns:
-        Tuple[str, str]: (specs, spec_detail) — строки с ключами и значениями.
-    """
-    try:
-        spec_names = []
-        spec_values = []
+    return ""
 
-        # Ищем блок характеристик
-        spec_selectors = [
-            ".product-specs",
-            ".specs",
-            ".attributes",
-            ".product-attributes",
-            ".additional-attributes",
-            ".data-table",
-            ".specification",
-            "table.attributes",
-        ]
 
-        spec_container = None
-        for selector in spec_selectors:
-            container = soup.select_one(selector)
-            if container:
-                spec_container = container
-                break
+def extract_images(soup: BeautifulSoup) -> tuple[str, str]:
+    selectors = [
+        "img.product-image",
+        ".product-image img",
+        "img",
+    ]
 
-        if spec_container:
-            # Пробуем извлечь из таблицы
-            rows = spec_container.find_all("tr")
-            if rows:
-                for row in rows:
-                    try:
-                        th = row.find("th")
-                        td = row.find("td")
-                        if th and td:
-                            name = th.get_text(strip=True)
-                            value = td.get_text(strip=True)
-                            if name and value:
-                                spec_names.append(name)
-                                spec_values.append(value)
-                    except Exception:
-                        continue
+    for selector in selectors:
+        img = soup.select_one(selector)
 
-            # Пробуем извлечь из списка DL
-            if not spec_names:
-                dt_elements = spec_container.find_all("dt")
-                dd_elements = spec_container.find_all("dd")
-                if dt_elements and dd_elements:
-                    for dt, dd in zip(dt_elements, dd_elements):
-                        name = dt.get_text(strip=True)
-                        value = dd.get_text(strip=True)
-                        if name and value:
-                            spec_names.append(name)
-                            spec_values.append(value)
+        if img:
+            src = (
+                img.get("data-src")
+                or img.get("src")
+                or ""
+            )
 
-            # Пробуем извлечь из пар div-ов
-            if not spec_names:
-                label_elems = spec_container.find_all(
-                    ["label", "span", "div"],
-                    class_=lambda c: c and ("label" in c or "attr" in c or "spec" in c)
+            if src:
+                url = urljoin(BASE_URL, src)
+                name = os.path.basename(
+                    urlparse(url).path
                 )
-                for label in label_elems:
-                    try:
-                        name = label.get_text(strip=True)
-                        if name and ":" in name:
-                            parts = name.split(":", 1)
-                            spec_names.append(parts[0].strip())
-                            spec_values.append(parts[1].strip())
-                    except Exception:
-                        continue
 
-        # Если характеристики не найдены, ищем их в общем описании
-        if not spec_names:
-            # Ищем строки с ":" в описании
-            description = extract_description(soup)
-            if description:
-                lines = description.split("\n")
-                for line in lines:
-                    line = line.strip()
-                    if ":" in line and len(line) < 200:
-                        parts = line.split(":", 1)
-                        name = parts[0].strip()
-                        value = parts[1].strip()
-                        if name and value and len(name) < 100 and len(value) < 200:
-                            # Проверяем, что это похоже на характеристику
-                            if any(keyword in name.lower() for keyword in [
-                                "artikelnummer", "inhoud", "temperatuur", "afmeting",
-                                "energieklasse", "gewicht", "klimaatklasse", "koelmiddel",
-                                "aansluitwaarde", "type", "model", "spanning", "vermogen"
-                            ]):
-                                spec_names.append(name)
-                                spec_values.append(value)
+                return url, name
 
-        return ",".join(spec_names), ",".join(spec_values)
-
-    except Exception as e:
-        log_message("debug", f"Ошибка при извлечении характеристик: {e}")
-        return "", ""
+    return "", ""
 
 
-def parse_product(html: str) -> Dict[str, Any]:
-    """
-    Извлекает все поля товара из HTML страницы товара.
+def extract_prices(soup: BeautifulSoup) -> tuple[str, str]:
+    text = soup.get_text(" ")
 
-    Args:
-        html (str): HTML-содержимое страницы товара.
+    prices = re.findall(
+        r"€\s*[\d\.,]+",
+        text
+    )
 
-    Returns:
-        Dict[str, Any]: Словарь с данными товара по спецификации.
-    """
-    if not html:
-        log_message("warning", "parse_product: получен пустой HTML")
-        return {}
+    prices = [
+        normalize_price(p)
+        for p in prices
+    ]
 
-    try:
-        soup = BeautifulSoup(html, "html.parser")
+    prices = [
+        p for p in prices
+        if p
+    ]
 
-        # Извлекаем все поля
-        title = extract_title(soup)
-        breadcrumb = extract_breadcrumb(soup)
-        short_description = extract_short_description(soup)
-        imageurl, image_name = extract_images(soup)
-        price, sale_price = extract_prices(soup)
-        description = extract_description(soup)
-        specs, spec_detail = extract_specs(soup)
+    if len(prices) >= 2:
+        return prices[0], prices[1]
 
-        # Формируем результат
-        result = {
-            "URL": "",  # Будет заполнено вызывающим кодом
-            "Breadcrumb": breadcrumb,
-            "Title": title,
-            "Short description": short_description,
-            "imageurl": imageurl,
-            "image_name": image_name,
-            "Price": price if price is not None else "",
-            "Sale price": sale_price if sale_price is not None else "",
-            "Description": description,
-            "Specs": specs,
-            "Spec_detail": spec_detail,
+    if len(prices) == 1:
+        return prices[0], ""
+
+    return "", ""
+
+
+def extract_specs(soup: BeautifulSoup) -> tuple[str, str]:
+    specs = []
+
+    text = soup.get_text("\n")
+
+    for line in text.split("\n"):
+        line = clean_text(line)
+
+        if ":" in line:
+            key, value = line.split(":", 1)
+
+            key = clean_text(key)
+            value = clean_text(value)
+
+            if key and value and len(key) < 80:
+                specs.append(
+                    (key, value)
+                )
+
+    names = []
+    values = []
+
+    for key, value in specs:
+        names.append(key)
+        values.append(value)
+
+    return (
+        ", ".join(names),
+        ", ".join(values),
+    )
+
+
+def parse_product(url: str) -> dict:
+    soup = get_soup(url)
+
+    if not soup:
+        return {
+            "URL": url,
+            "status": "failed",
         }
 
-        return result
+    price, sale_price = extract_prices(soup)
 
-    except Exception as e:
-        log_message("error", f"parse_product: критическая ошибка: {e}")
-        return {}
+    image_url, image_name = extract_images(soup)
 
+    specs, spec_detail = extract_specs(soup)
 
-def parse_html_data(html_contents: List[str]) -> List[Dict[str, Any]]:
-    """
-    Точка интеграции с главным оркестратором main.py.
-    Принимает список HTML страниц товаров, парсит каждую и возвращает список записей.
-
-    Args:
-        html_contents (List[str]): Список HTML-строк страниц товаров.
-
-    Returns:
-        List[Dict[str, Any]]: Список словарей с данными товаров.
-    """
-    if not html_contents:
-        log_message("warning", "parse_html_data: получен пустой список HTML")
-        return []
-
-    all_results = []
-    log_message("info", f"parse_html_data: начат парсинг {len(html_contents)} страниц товаров")
-
-    for idx, html in enumerate(html_contents, 1):
-        try:
-            product_data = parse_product(html)
-            if product_data:
-                # Добавляем URL (извлекаем из HTML)
-                soup = BeautifulSoup(html, "html.parser")
-                canonical = soup.find("link", {"rel": "canonical"})
-                if canonical and canonical.get("href"):
-                    product_data["URL"] = canonical["href"]
-                else:
-                    # Пробуем извлечь URL из meta-тегов
-                    og_url = soup.find("meta", {"property": "og:url"})
-                    if og_url and og_url.get("content"):
-                        product_data["URL"] = og_url["content"]
-                    else:
-                        # Пробуем найти URL в ссылках
-                        product_links = soup.find_all("a", href=lambda h: h and "/koelkasten-kisten/" in h and ".html" in h)
-                        if product_links:
-                            # Берём первую подходящую ссылку (обычно это ссылка на сам товар)
-                            for link in product_links:
-                                href = link.get("href")
-                                if href and href.startswith("https"):
-                                    product_data["URL"] = href
-                                    break
-
-                all_results.append(product_data)
-            else:
-                log_message("warning", f"parse_html_data: пустой результат для страницы #{idx}")
-
-        except Exception as e:
-            log_message("error", f"parse_html_data: ошибка при обработке страницы #{idx}: {e}")
-            continue
-
-    log_message("info", f"parse_html_data: парсинг завершён, получено {len(all_results)} записей")
-    return all_results
+    return {
+        "URL": url,
+        "Breadcrumb": extract_breadcrumb(soup),
+        "Title": extract_title(soup),
+        "Short description": extract_short_description(soup),
+        "imageurl": image_url,
+        "image_name": image_name,
+        "Price": price,
+        "Sale price": sale_price,
+        "Description": extract_description(soup),
+        "Specs": specs,
+        "Spec_detail": spec_detail,
+    }
 
 
-# Для обратной совместимости с main.py (используется parse_html_data)
-# parse_html_data уже реализована выше
+def save_csv(products: list[dict], filename: str) -> None:
+    columns = [
+        "URL",
+        "Breadcrumb",
+        "Title",
+        "Short description",
+        "imageurl",
+        "image_name",
+        "Price",
+        "Sale price",
+        "Description",
+        "Specs",
+        "Spec_detail",
+    ]
+
+    df = pd.DataFrame(products)
+
+    for column in columns:
+        if column not in df.columns:
+            df[column] = ""
+
+    df = df[columns]
+
+    df.to_csv(
+        filename,
+        index=False,
+        encoding="utf-8-sig",
+    )
+
+
+def main() -> None:
+    print("Collecting product URLs...")
+
+    urls = extract_product_links(
+        CATEGORY_URL
+    )
+
+    print(
+        f"Found products: {len(urls)}"
+    )
+
+    urls = urls[:TEST_LIMIT]
+
+    products = []
+
+    for index, url in enumerate(urls, 1):
+        print(
+            f"[{index}/{len(urls)}] {url}"
+        )
+
+        product = parse_product(url)
+
+        products.append(product)
+
+        time.sleep(1)
+
+    save_csv(
+        products,
+        OUTPUT_FILE
+    )
+
+    print(
+        f"Saved: {OUTPUT_FILE}"
+    )
+
 
 if __name__ == "__main__":
-    """
-    Локальный тест модуля parser.
-    """
-    print(f"[{__file__}] Тестовый запуск парсера...")
-
-    # Попытка загрузить тестовый HTML
-    try:
-        from app.config import PAGE_HTML_FILE
-        with open(PAGE_HTML_FILE, "r", encoding="utf-8") as f:
-            test_html = f.read()
-
-        # Проверяем parse_listing
-        urls = parse_listing(test_html)
-        print(f"Найдено URL товаров в категории: {len(urls)}")
-        if urls:
-            print(f"Первый URL: {urls[0]}")
-
-        # Проверяем parse_product на одном товаре (если есть URL)
-        if urls:
-            # Используем первый URL для демонстрации
-            import requests
-            try:
-                response = requests.get(urls[0], headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
-                if response.status_code == 200:
-                    product_data = parse_product(response.text)
-                    print("\nРезультат парсинга товара:")
-                    for key, value in product_data.items():
-                        if value and len(str(value)) > 100:
-                            print(f"  {key}: {str(value)[:100]}...")
-                        else:
-                            print(f"  {key}: {value}")
-            except Exception as e:
-                print(f"Не удалось загрузить страницу товара: {e}")
-
-    except FileNotFoundError:
-        print("Тестовый HTML файл не найден. Пропускаем тест.")
-    except Exception as e:
-        print(f"Ошибка при тестировании: {e}")
+    main()
 
 --- app/playwright_engine.py ---
 #!/usr/bin/env python3
@@ -11669,392 +11192,291 @@ if __name__ == "__main__":
 
 
 --- app/scraper.py ---
-# app/scraper.py
-# -*- coding: utf-8 -*-
-
 """
-Модуль scraper отвечает за сбор HTML-страниц с сайта professionele-koeling.nl.
+app/scraper.py
 
-Основная функция fetch_page_data() оркестрирует процесс:
-1. Загрузка главной страницы категории koelkasten-kisten
-2. Извлечение URL всех товаров
-3. Загрузка страницы каждого товара
+Website scraper layer.
 
-Модуль работает независимо от parser.py, возвращая список сырых HTML-строк.
+Responsibilities:
+- Fetch category pages
+- Collect product URLs
+- Save raw HTML snapshots
+- Provide URLs for parser.py
+
+Stack:
+requests + BeautifulSoup
 """
 
+from __future__ import annotations
+
+import json
+import os
 import time
-from typing import List, Optional, Dict, Any
+from datetime import datetime
 from urllib.parse import urljoin
 
 import requests
 from bs4 import BeautifulSoup
 
-from app.config import (
-    TIMEOUT,
-    RETRY_COUNT,
-    RETRYABLE_STATUS_CODES,
-    PROXY_URL,
-    HEADLESS,
-    IS_DOCKER,
-)
-from app.utils import random_delay, log_message
-from app.parser import parse_listing, parse_product
+
+BASE_URL = "https://www.professionele-koeling.nl"
+
+START_URLS = [
+    f"{BASE_URL}/koelkasten-kisten.html",
+]
+
+DATA_DIR = "data/raw_html"
+OUTPUT_FILE = "data/product_urls.json"
+
+REQUEST_TIMEOUT = 30
+DELAY_SECONDS = 1
 
 
-def _get_headers() -> Dict[str, str]:
+HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 "
+        "(Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 "
+        "(KHTML, like Gecko) "
+        "Chrome/120 Safari/537.36"
+    )
+}
+
+
+def ensure_directories() -> None:
+    os.makedirs(
+        DATA_DIR,
+        exist_ok=True
+    )
+
+    os.makedirs(
+        os.path.dirname(OUTPUT_FILE),
+        exist_ok=True
+    )
+
+
+def fetch_page(url: str) -> str | None:
     """
-    Возвращает заголовки для HTTP-запросов, имитирующие реального пользователя.
-    
+    Download page HTML.
+    """
+
+    try:
+        response = requests.get(
+            url,
+            headers=HEADERS,
+            timeout=REQUEST_TIMEOUT,
+        )
+
+        response.raise_for_status()
+
+        return response.text
+
+    except requests.RequestException as exc:
+        print(
+            f"Request failed: {url}"
+        )
+        print(exc)
+
+        return None
+
+def fetch_page_data(url: str) -> dict:
+    """
+    Fetch page data for main.py.
+
     Returns:
-        Dict[str, str]: Словарь с HTTP-заголовками.
+        {
+            "url": url,
+            "html": html,
+            "soup": BeautifulSoup object
+        }
     """
+
+    html = fetch_page(url)
+
+    if not html:
+        return {
+            "url": url,
+            "html": "",
+            "soup": None,
+        }
+
     return {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Connection": "keep-alive",
-        "Upgrade-Insecure-Requests": "1",
-        "DNT": "1",
+        "url": url,
+        "html": html,
+        "soup": BeautifulSoup(
+            html,
+            "lxml"
+        ),
     }
 
 
-def _fetch_with_retry(url: str, max_retries: int = None) -> Optional[str]:
+def save_html(
+    html: str,
+    name: str,
+) -> str:
     """
-    Выполняет HTTP GET запрос с автоматическими повторами при временных сбоях.
-    
-    Args:
-        url (str): URL для запроса.
-        max_retries (int, optional): Максимальное число повторов.
-            По умолчанию — значение из config.RETRY_COUNT.
-    
-    Returns:
-        Optional[str]: HTML-содержимое страницы или None при ошибке.
+    Save raw HTML snapshot.
     """
-    if max_retries is None:
-        max_retries = RETRY_COUNT
-    
-    headers = _get_headers()
-    proxy = {"http": PROXY_URL, "https": PROXY_URL} if PROXY_URL else None
-    
-    for attempt in range(1, max_retries + 1):
-        try:
-            log_message("debug", f"Запрос к {url} (попытка {attempt}/{max_retries})")
-            
-            response = requests.get(
-                url,
-                headers=headers,
-                proxies=proxy,
-                timeout=TIMEOUT,
-                verify=False if PROXY_URL else True,
-                allow_redirects=True,
-            )
-            
-            # Проверяем статус ответа
-            if response.status_code == 404:
-                log_message("error", f"Страница не найдена (404): {url}")
-                return None
-            
-            if response.status_code == 403:
-                log_message("error", f"Доступ запрещён (403): {url} — остановка")
-                return None
-            
-            if response.status_code in RETRYABLE_STATUS_CODES:
-                log_message("warning", f"Временный сбой {response.status_code} на {url}, попытка {attempt}/{max_retries}")
-                if attempt < max_retries:
-                    time.sleep(2 ** attempt)  # экспоненциальная задержка
-                    continue
-                return None
-            
-            if response.status_code != 200:
-                log_message("warning", f"Неожиданный статус {response.status_code} на {url}")
-                return None
-            
-            # Проверяем, что ответ содержит HTML
-            content_type = response.headers.get("content-type", "")
-            if "text/html" not in content_type:
-                log_message("warning", f"Ответ не является HTML: {content_type} на {url}")
-                return None
-            
-            return response.text
-        
-        except requests.Timeout:
-            log_message("warning", f"Таймаут запроса к {url} (попытка {attempt}/{max_retries})")
-            if attempt < max_retries:
-                time.sleep(2 ** attempt)
-                continue
-        
-        except requests.RequestException as e:
-            log_message("error", f"Ошибка запроса к {url}: {e} (попытка {attempt}/{max_retries})")
-            if attempt < max_retries:
-                time.sleep(2 ** attempt)
-                continue
-        
-        except Exception as e:
-            log_message("error", f"Непредвиденная ошибка при запросе к {url}: {e}")
-            return None
-    
-    log_message("error", f"Не удалось загрузить {url} после {max_retries} попыток")
-    return None
+
+    filename = (
+        f"{name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
+    )
+
+    path = os.path.join(
+        DATA_DIR,
+        filename
+    )
+
+    with open(
+        path,
+        "w",
+        encoding="utf-8",
+    ) as file:
+        file.write(html)
+
+    return path
 
 
-def fetch_listing_page(url: str) -> Optional[str]:
+def extract_links(
+    html: str,
+) -> list[str]:
     """
-    Загружает HTML страницы категории/листинга.
-    
-    Args:
-        url (str): URL страницы категории.
-    
-    Returns:
-        Optional[str]: HTML-содержимое страницы или None при ошибке.
+    Extract product URLs from category HTML.
     """
-    return _fetch_with_retry(url)
+
+    soup = BeautifulSoup(
+        html,
+        "lxml"
+    )
+
+    urls = []
+
+    for link in soup.select(
+        "a[href]"
+    ):
+        href = link.get("href")
+
+        if not href:
+            continue
+
+        url = urljoin(
+            BASE_URL,
+            href
+        )
+
+        if (
+            url.startswith(BASE_URL)
+            and ".html" in url
+        ):
+            urls.append(url)
+
+    return list(
+        dict.fromkeys(urls)
+    )
 
 
-def fetch_product_page(url: str) -> Optional[str]:
+def scrape_category(
+    url: str,
+) -> list[str]:
     """
-    Загружает HTML страницы товара.
-    
-    Args:
-        url (str): URL страницы товара.
-    
-    Returns:
-        Optional[str]: HTML-содержимое страницы товара или None при ошибке.
+    Scrape one category page.
     """
-    return _fetch_with_retry(url)
 
+    print(
+        f"Downloading: {url}"
+    )
 
-def get_next_page_url(html: str, base_url: str) -> Optional[str]:
-    """
-    Находит URL следующей страницы пагинации в HTML.
-    
-    Args:
-        html (str): HTML-содержимое текущей страницы.
-        base_url (str): Базовый URL для создания абсолютных ссылок.
-    
-    Returns:
-        Optional[str]: URL следующей страницы или None, если страница последняя.
-    """
+    html = fetch_page(url)
+
     if not html:
-        return None
-    
-    try:
-        soup = BeautifulSoup(html, "html.parser")
-        
-        # Ищем ссылку "Next" в пагинации
-        # Варианты селекторов для разных структур
-        next_selectors = [
-            'a[title="Volgende"]',
-            'a.next',
-            'a:contains("Volgende")',
-            'li.next a',
-            '.pagination .next a',
-            'a[rel="next"]',
-        ]
-        
-        for selector in next_selectors:
-            try:
-                next_link = soup.select_one(selector)
-                if next_link and next_link.get("href"):
-                    href = next_link["href"]
-                    if href:
-                        return urljoin(base_url, href)
-            except Exception:
-                continue
-        
-        # Альтернативный поиск: ищем кнопку с текстом "Volgende"
-        for link in soup.find_all("a"):
-            text = link.get_text(strip=True).lower()
-            if "volgende" in text and link.get("href"):
-                return urljoin(base_url, link["href"])
-        
-        return None
-    
-    except Exception as e:
-        log_message("error", f"Ошибка при поиске следующей страницы: {e}")
-        return None
-
-
-def fetch_all_products(start_url: str) -> List[str]:
-    """
-    Оркестрация обхода сайта: загружает категорию, получает список товаров
-    и скачивает каждую карточку товара с пагинацией.
-    
-    Args:
-        start_url (str): Начальный URL категории.
-    
-    Returns:
-        List[str]: Список HTML-строк страниц товаров.
-    """
-    product_pages = []
-    processed_urls = set()
-    page_num = 0
-    
-    log_message("info", f"Начало обхода категории: {start_url}")
-    
-    current_url = start_url
-    max_pages = 10  # защита от бесконечного цикла
-    
-    # Обход страниц пагинации категории
-    while current_url and page_num < max_pages:
-        page_num += 1
-        log_message("info", f"Загрузка страницы категории #{page_num}: {current_url}")
-        
-        # Скачиваем страницу категории
-        listing_html = fetch_listing_page(current_url)
-        if not listing_html:
-            log_message("error", f"Не удалось загрузить страницу категории: {current_url}")
-            break
-        
-        # Извлекаем URL товаров
-        product_urls = parse_listing(listing_html)
-        
-        if not product_urls:
-            log_message("warning", f"На странице {current_url} не найдено товаров")
-            # Всё равно пробуем перейти на следующую страницу
-        
-        log_message("info", f"Найдено {len(product_urls)} товаров на странице {page_num}")
-        
-        # Загружаем каждый товар с задержкой
-        for idx, product_url in enumerate(product_urls, 1):
-            if product_url in processed_urls:
-                log_message("debug", f"Товар уже обработан: {product_url}")
-                continue
-            
-            processed_urls.add(product_url)
-            
-            log_message("info", f"Загрузка товара {idx}/{len(product_urls)}: {product_url}")
-            
-            product_html = fetch_product_page(product_url)
-            if product_html:
-                product_pages.append(product_html)
-                log_message("debug", f"Товар загружен: {product_url}")
-            else:
-                log_message("warning", f"Не удалось загрузить товар: {product_url}")
-            
-            # Задержка между товарами
-            if idx < len(product_urls):
-                random_delay(1.0, 2.0)
-        
-        # Проверяем наличие следующей страницы
-        next_url = get_next_page_url(listing_html, start_url)
-        if next_url:
-            log_message("info", f"Переход на следующую страницу: {next_url}")
-            current_url = next_url
-            # Задержка перед переходом на следующую страницу
-            random_delay(1.5, 3.0)
-        else:
-            log_message("info", "Достигнут конец пагинации")
-            break
-    
-    log_message("info", f"Обход завершён. Всего загружено {len(product_pages)} товаров")
-    return product_pages
-
-
-def fetch_page_data(context=None) -> List[str]:
-    """
-    Главная точка входа для сбора данных, вызываемая из main.py.
-    
-    Args:
-        context: Необязательный контекст (игнорируется, т.к. используется requests).
-    
-    Returns:
-        List[str]: Список HTML-строк страниц товаров.
-    """
-    log_message("info", "=" * 70)
-    log_message("info", "Запуск scraper: сбор данных с professionele-koeling.nl")
-    log_message("info", "=" * 70)
-    
-    # Начальный URL категории (согласно заданию)
-    start_url = "https://www.professionele-koeling.nl/koelkasten-kisten.html"
-    
-    # Собираем все товары
-    product_pages = fetch_all_products(start_url)
-    
-    log_message("info", "=" * 70)
-    log_message("info", f"Сбор данных завершён. Получено {len(product_pages)} страниц товаров")
-    log_message("info", "=" * 70)
-    
-    return product_pages
-
-
-def fetch_page_data_test(context=None) -> List[str]:
-    """
-    Тестовая версия для сбора только 2 товаров.
-    Используется для проверки структуры CSV перед полным сбором.
-    
-    Args:
-        context: Необязательный контекст (игнорируется).
-    
-    Returns:
-        List[str]: Список HTML-строк страниц товаров (до 2 штук).
-    """
-    log_message("info", "=" * 70)
-    log_message("info", "Запуск scraper (ТЕСТОВЫЙ РЕЖИМ): сбор 2 товаров")
-    log_message("info", "=" * 70)
-    
-    start_url = "https://www.professionele-koeling.nl/koelkasten-kisten.html"
-    
-    # Загружаем страницу категории
-    listing_html = fetch_listing_page(start_url)
-    if not listing_html:
-        log_message("error", "Не удалось загрузить страницу категории")
         return []
-    
-    # Извлекаем URL товаров
-    product_urls = parse_listing(listing_html)
-    if not product_urls:
-        log_message("error", "Не найдено товаров на странице")
+
+    save_html(
+        html,
+        "category"
+    )
+
+    return extract_links(
+        html
+    )
+
+
+def save_urls(
+    urls: list[str],
+) -> None:
+
+    with open(
+        OUTPUT_FILE,
+        "w",
+        encoding="utf-8",
+    ) as file:
+
+        json.dump(
+            urls,
+            file,
+            indent=2,
+            ensure_ascii=False,
+        )
+
+
+def load_urls() -> list[str]:
+    """
+    Helper for parser.py
+    """
+
+    if not os.path.exists(
+        OUTPUT_FILE
+    ):
         return []
-    
-    # Берем только первые 2 товара
-    test_urls = product_urls[:2]
-    log_message("info", f"Тестовый сбор: найдено {len(product_urls)} товаров, берём {len(test_urls)}")
-    
-    product_pages = []
-    for idx, product_url in enumerate(test_urls, 1):
-        log_message("info", f"Загрузка тестового товара {idx}/2: {product_url}")
-        product_html = fetch_product_page(product_url)
-        if product_html:
-            product_pages.append(product_html)
-        else:
-            log_message("warning", f"Не удалось загрузить тестовый товар: {product_url}")
-        
-        if idx < len(test_urls):
-            random_delay(1.0, 2.0)
-    
-    log_message("info", "=" * 70)
-    log_message("info", f"Тестовый сбор завершён. Загружено {len(product_pages)} товаров")
-    log_message("info", "=" * 70)
-    
-    return product_pages
+
+    with open(
+        OUTPUT_FILE,
+        encoding="utf-8",
+    ) as file:
+
+        return json.load(file)
 
 
-# Псевдоним для обратной совместимости с main.py
-# Если требуется тестовый режим, можно раскомментировать и использовать fetch_page_data_test
-# fetch_page_data = fetch_page_data_test  # Для теста 2 товаров
+def main() -> None:
+
+    ensure_directories()
+
+    all_urls = []
+
+    for category in START_URLS:
+
+        urls = scrape_category(
+            category
+        )
+
+        all_urls.extend(
+            urls
+        )
+
+        time.sleep(
+            DELAY_SECONDS
+        )
+
+
+    all_urls = list(
+        dict.fromkeys(all_urls)
+    )
+
+    save_urls(
+        all_urls
+    )
+
+    print(
+        f"Collected URLs: {len(all_urls)}"
+    )
+
+    print(
+        f"Saved to: {OUTPUT_FILE}"
+    )
+
 
 if __name__ == "__main__":
-    """
-    Локальный тест модуля scraper.
-    """
-    print("[{__file__}] Тестовый запуск scraper...")
-    
-    # Тест: скачиваем 2 товара для проверки
-    test_pages = fetch_page_data_test()
-    print(f"Загружено страниц: {len(test_pages)}")
-    
-    # Проверяем структуру данных через parser
-    if test_pages:
-        from app.parser import parse_html_data
-        results = parse_html_data(test_pages)
-        print(f"Спарсено записей: {len(results)}")
-        
-        if results:
-            print("\nПример первой записи:")
-            for key, value in results[0].items():
-                print(f"  {key}: {str(value)[:100]}...")
+    main()
 
 --- app/session_manager.py ---
 #!/usr/bin/env python3

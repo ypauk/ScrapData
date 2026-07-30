@@ -1,288 +1,285 @@
-# app/scraper.py
+"""
+app/scraper.py
 
-import re
+Website scraper layer.
+
+Responsibilities:
+- Fetch category pages
+- Collect product URLs
+- Save raw HTML snapshots
+- Provide URLs for parser.py
+
+Stack:
+requests + BeautifulSoup
+"""
+
+from __future__ import annotations
+
+import json
+import os
 import time
-from pathlib import Path
+from datetime import datetime
 from urllib.parse import urljoin
 
-import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 
 
-BASE_URL = "https://professionele-koeling.nl"
+BASE_URL = "https://www.professionele-koeling.nl"
 
-OUTPUT_FILE = "products.csv"
-
-CATEGORY_URLS = [
-    # Add category URLs here
+START_URLS = [
+    f"{BASE_URL}/koelkasten-kisten.html",
 ]
+
+DATA_DIR = "data/raw_html"
+OUTPUT_FILE = "data/product_urls.json"
+
+REQUEST_TIMEOUT = 30
+DELAY_SECONDS = 1
+
 
 HEADERS = {
     "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 Chrome/120 Safari/537.36"
+        "Mozilla/5.0 "
+        "(Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 "
+        "(KHTML, like Gecko) "
+        "Chrome/120 Safari/537.36"
     )
 }
 
 
-session = requests.Session()
-session.headers.update(HEADERS)
+def ensure_directories() -> None:
+    os.makedirs(
+        DATA_DIR,
+        exist_ok=True
+    )
+
+    os.makedirs(
+        os.path.dirname(OUTPUT_FILE),
+        exist_ok=True
+    )
 
 
-def get_soup(url):
+def fetch_page(url: str) -> str | None:
+    """
+    Download page HTML.
+    """
+
     try:
-        response = session.get(url, timeout=30)
+        response = requests.get(
+            url,
+            headers=HEADERS,
+            timeout=REQUEST_TIMEOUT,
+        )
+
         response.raise_for_status()
-        return BeautifulSoup(response.text, "html.parser")
-    except Exception as e:
-        print(f"Request failed: {url} -> {e}")
+
+        return response.text
+
+    except requests.RequestException as exc:
+        print(
+            f"Request failed: {url}"
+        )
+        print(exc)
+
         return None
 
+def fetch_page_data(url: str) -> dict:
+    """
+    Fetch page data for main.py.
 
-def clean_text(value):
-    if not value:
-        return ""
+    Returns:
+        {
+            "url": url,
+            "html": html,
+            "soup": BeautifulSoup object
+        }
+    """
 
-    return re.sub(
-        r"\s+",
-        " ",
-        value.get_text(" ", strip=True)
-        if hasattr(value, "get_text")
-        else str(value),
-    ).strip()
+    html = fetch_page(url)
 
+    if not html:
+        return {
+            "url": url,
+            "html": "",
+            "soup": None,
+        }
 
-def normalize_price(price):
-    if not price:
-        return ""
-
-    price = price.replace("€", "")
-    price = price.replace("\xa0", "")
-    price = price.strip()
-
-    price = price.replace(".", "")
-    price = price.replace(",", ".")
-
-    match = re.search(r"\d+(\.\d+)?", price)
-
-    return match.group(0) if match else ""
-
-
-def extract_image_name(url):
-    if not url:
-        return ""
-
-    return url.split("/")[-1].split("?")[0]
+    return {
+        "url": url,
+        "html": html,
+        "soup": BeautifulSoup(
+            html,
+            "lxml"
+        ),
+    }
 
 
-def collect_product_urls(category_url):
-    urls = set()
+def save_html(
+    html: str,
+    name: str,
+) -> str:
+    """
+    Save raw HTML snapshot.
+    """
 
-    soup = get_soup(category_url)
+    filename = (
+        f"{name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
+    )
 
-    if not soup:
-        return []
+    path = os.path.join(
+        DATA_DIR,
+        filename
+    )
 
-    for link in soup.select("a[href]"):
+    with open(
+        path,
+        "w",
+        encoding="utf-8",
+    ) as file:
+        file.write(html)
+
+    return path
+
+
+def extract_links(
+    html: str,
+) -> list[str]:
+    """
+    Extract product URLs from category HTML.
+    """
+
+    soup = BeautifulSoup(
+        html,
+        "lxml"
+    )
+
+    urls = []
+
+    for link in soup.select(
+        "a[href]"
+    ):
         href = link.get("href")
 
         if not href:
             continue
 
-        url = urljoin(BASE_URL, href)
-
-        if "/product/" in url or "/p/" in url:
-            urls.add(url)
-
-    return list(urls)
-
-
-def parse_breadcrumb(soup):
-    items = []
-
-    for el in soup.select(
-        ".breadcrumb a, .breadcrumbs a, nav.breadcrumb a"
-    ):
-        items.append(clean_text(el))
-
-    return " > ".join(items)
-
-
-def parse_product(url):
-    soup = get_soup(url)
-
-    if not soup:
-        return None
-
-    data = {
-        "URL": url,
-        "Breadcrumb": "",
-        "Title": "",
-        "Short description": "",
-        "imageurl": "",
-        "image_name": "",
-        "Price": "",
-        "Sale price": "",
-        "Description": "",
-        "Specs": "",
-        "Spec_detail": "",
-    }
-
-    try:
-        data["Breadcrumb"] = parse_breadcrumb(soup)
-
-        title = soup.select_one(
-            "h1.product-title, h1.entry-title, h1"
-        )
-        data["Title"] = clean_text(title)
-
-        short_desc = soup.select_one(
-            ".short-description, .product-summary, .excerpt"
-        )
-        data["Short description"] = clean_text(short_desc)
-
-        image = soup.select_one(
-            "img.product-image, .woocommerce-product-gallery img, img"
+        url = urljoin(
+            BASE_URL,
+            href
         )
 
-        if image:
-            image_url = (
-                image.get("data-large_image")
-                or image.get("data-src")
-                or image.get("src")
-            )
-
-            if image_url:
-                image_url = urljoin(BASE_URL, image_url)
-
-                data["imageurl"] = image_url
-                data["image_name"] = extract_image_name(
-                    image_url
-                )
-
-        price = soup.select_one(
-            ".price, .product-price, .woocommerce-Price-amount"
-        )
-
-        data["Price"] = normalize_price(clean_text(price))
-
-        sale = soup.select_one(
-            ".sale-price, .onsale, ins"
-        )
-
-        data["Sale price"] = normalize_price(clean_text(sale))
-
-        description = soup.select_one(
-            ".description, .product-description, .woocommerce-product-details__short-description"
-        )
-
-        data["Description"] = clean_text(description)
-
-        specs = []
-
-        for row in soup.select(
-            "table tr, .specifications tr, .attributes tr"
+        if (
+            url.startswith(BASE_URL)
+            and ".html" in url
         ):
-            cols = row.find_all(["td", "th"])
+            urls.append(url)
 
-            if len(cols) >= 2:
-                key = clean_text(cols[0])
-                value = clean_text(cols[1])
-
-                if key and value:
-                    specs.append(
-                        f"{key}: {value}"
-                    )
-
-        data["Specs"] = " | ".join(specs)
-        data["Spec_detail"] = "\n".join(specs)
-
-        return data
-
-    except Exception as e:
-        print(f"Parse error {url}: {e}")
-        return None
-
-
-def scrape(limit=None):
-    product_urls = set()
-
-    for category in CATEGORY_URLS:
-        print(f"Category: {category}")
-
-        urls = collect_product_urls(category)
-
-        product_urls.update(urls)
-
-        if limit and len(product_urls) >= limit:
-            break
-
-    product_urls = list(product_urls)
-
-    if limit:
-        product_urls = product_urls[:limit]
-
-    print(f"Found products: {len(product_urls)}")
-
-    products = []
-
-    for index, url in enumerate(product_urls, 1):
-        print(
-            f"[{index}/{len(product_urls)}] {url}"
-        )
-
-        item = parse_product(url)
-
-        if item:
-            products.append(item)
-
-        time.sleep(1)
-
-    return products
-
-
-def save_csv(products):
-    if not products:
-        print("No products found")
-        return
-
-    df = pd.DataFrame(products)
-
-    columns = [
-        "URL",
-        "Breadcrumb",
-        "Title",
-        "Short description",
-        "imageurl",
-        "image_name",
-        "Price",
-        "Sale price",
-        "Description",
-        "Specs",
-        "Spec_detail",
-    ]
-
-    df = df.reindex(columns=columns)
-
-    Path(OUTPUT_FILE).parent.mkdir(
-        parents=True,
-        exist_ok=True
+    return list(
+        dict.fromkeys(urls)
     )
 
-    df.to_csv(
+
+def scrape_category(
+    url: str,
+) -> list[str]:
+    """
+    Scrape one category page.
+    """
+
+    print(
+        f"Downloading: {url}"
+    )
+
+    html = fetch_page(url)
+
+    if not html:
+        return []
+
+    save_html(
+        html,
+        "category"
+    )
+
+    return extract_links(
+        html
+    )
+
+
+def save_urls(
+    urls: list[str],
+) -> None:
+
+    with open(
         OUTPUT_FILE,
-        index=False,
-        encoding="utf-8-sig"
+        "w",
+        encoding="utf-8",
+    ) as file:
+
+        json.dump(
+            urls,
+            file,
+            indent=2,
+            ensure_ascii=False,
+        )
+
+
+def load_urls() -> list[str]:
+    """
+    Helper for parser.py
+    """
+
+    if not os.path.exists(
+        OUTPUT_FILE
+    ):
+        return []
+
+    with open(
+        OUTPUT_FILE,
+        encoding="utf-8",
+    ) as file:
+
+        return json.load(file)
+
+
+def main() -> None:
+
+    ensure_directories()
+
+    all_urls = []
+
+    for category in START_URLS:
+
+        urls = scrape_category(
+            category
+        )
+
+        all_urls.extend(
+            urls
+        )
+
+        time.sleep(
+            DELAY_SECONDS
+        )
+
+
+    all_urls = list(
+        dict.fromkeys(all_urls)
+    )
+
+    save_urls(
+        all_urls
     )
 
     print(
-        f"Saved {len(df)} products to {OUTPUT_FILE}"
+        f"Collected URLs: {len(all_urls)}"
+    )
+
+    print(
+        f"Saved to: {OUTPUT_FILE}"
     )
 
 
 if __name__ == "__main__":
-    # First run: test with 2 products
-    products = scrape(limit=2)
-
-    save_csv(products)
+    main()
