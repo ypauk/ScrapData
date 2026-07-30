@@ -1,0 +1,82 @@
+[
+  {
+    "name": "IDE",
+    "value": "AHWqTUklUlZu60b2pi6ChnpvPhTJ13tD-AiO-svqFcExOVEc_kZG9NfpYNRfCFbw",
+    "domain": ".doubleclick.net",
+    "path": "/",
+    "expires": 1819991087.224567,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "None"
+  },
+  {
+    "name": "cf_clearance",
+    "value": "79KvtCXiVT1FcNEZo4dnobz4LSoQOjVydqcQXtt8Z3c-1785431009-1.2.1.1-JfQQAFmiyCI4twdO86QP79PX6t8PDaMeyxUaAPcO64_0lcOQ6kTZtUWj36L59GOuXHJ0kJFGqj.pW0_LVxCOQLacF.Uj75F8xWpPC4PfRMG7AQ8a.iCLwCkqXdtuMp3D0t3pn183TR984HY1sWhOFTpgtoJdyqZJTwhZCwtrckutwCA1C4GUvWDcsNoM4VWj9CC6s_DVDqk7OYaFPl0lElvanuet2N11i1WzEO.LNS5kqKH5ZS4EyWa7xuMGVF.uCbplwDFBz0WIdNIzwHUPixiT5lbjS5aukrCFe3tLR9vj4dI0THaT9emmY9ggjJ36CnB4plE.Xo31_ViZ4IN2dvrOZLFTYNmpg1bes7bECw8",
+    "domain": ".professionele-koeling.nl",
+    "path": "/",
+    "expires": 1816967009.54212,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "None"
+  },
+  {
+    "name": "external_no_cache",
+    "value": "1",
+    "domain": ".www.professionele-koeling.nl",
+    "path": "/",
+    "expires": 1785434697,
+    "httpOnly": false,
+    "secure": false,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "frontend_cid",
+    "value": "94nUYnMLr5VeirfL",
+    "domain": ".www.professionele-koeling.nl",
+    "path": "/",
+    "expires": 1785435146.802789,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "frontend",
+    "value": "68v97otdtnfm8eco3mobnphjei",
+    "domain": ".www.professionele-koeling.nl",
+    "path": "/",
+    "expires": 1785435146.804789,
+    "httpOnly": true,
+    "secure": false,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "_gcl_au",
+    "value": "1.1.558496292.1785431009.-.-.1785431092.288967089.1785431092.1785431098",
+    "domain": ".professionele-koeling.nl",
+    "path": "/",
+    "expires": 1793207009,
+    "httpOnly": false,
+    "secure": false,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "_ga",
+    "value": "GA1.1.1608273963.1785431009",
+    "domain": ".professionele-koeling.nl",
+    "path": "/",
+    "expires": 1819991548.779789,
+    "httpOnly": false,
+    "secure": false,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "_ga_3X7F7CBMN7",
+    "value": "GS2.1.s1785431009$o1$g1$t1785431548$j60$l0$h0",
+    "domain": ".professionele-koeling.nl",
+    "path": "/",
+    "expires": 1819991548.778789,
+    "httpOnly": false,
+    "secure": false,
+    "sameSite": "Lax"
+  }
+]
