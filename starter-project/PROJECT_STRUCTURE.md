@@ -2,46 +2,8 @@
 
 ```text
 UPWORK-ALL/
-├── 📁 archive/
 ├── 📁 memory/
 │   └── 📄 9. Самая важная папка.txt
-├── 📁 projects/
-│   └── 📁 autoria-project/
-│       ├── 📁 AI_INPUT/
-│       │   ├── 📁 screenshots/
-│       │   ├── 📄 answers.txt
-│       │   ├── 📄 cookies.json
-│       │   ├── 📄 description.txt
-│       │   ├── 📄 headers.json
-│       │   ├── 📄 network.har
-│       │   ├── 📄 notes.txt
-│       │   ├── 📄 page.html
-│       │   └── 📄 traceback.txt
-│       ├── 📁 AI_OUTPUT/
-│       ├── 📁 app/
-│       │   ├── 📄 browser.py
-│       │   ├── 📄 config.py
-│       │   ├── 📄 exporter.py
-│       │   ├── 📄 main.py
-│       │   ├── 📄 parser.py
-│       │   ├── 📄 scraper.py
-│       │   └── 📄 utils.py
-│       ├── 📁 docs/
-│       │   └── 📄 здесь пилим документацию.txt
-│       ├── 📁 input/
-│       ├── 📁 output/
-│       ├── 📁 tests/
-│       ├── 📁 workflows/
-│       │   ├── 📄 new_project.md
-│       │   └── 📄 Вот чего сейчас не хватает..txt
-│       ├── 📄 .env
-│       ├── 📄 docker-compose.yml
-│       ├── 📄 Dockerfile
-│       ├── 📄 project_state.json
-│       ├── 📄 PROJECT_STRUCTURE.md
-│       ├── 📄 README.md
-│       ├── 📄 requirements.txt
-│       └── 📄 Как добиться не писать лишний код.txt
 ├── 📁 scraping-templates/
 │   ├── 📁 examples/
 │   │   ├── 📁 amazon/
@@ -58,22 +20,20 @@ UPWORK-ALL/
 │   │   ├── 📄 selenium.md
 │   │   └── 📄 ИИ можно сразу скормить этот файл..txt
 │   ├── 📁 prompts/
-│   │   ├── 📄 01_analysis_prompt.md
-│   │   ├── 📄 02_project_prompt.md
-│   │   ├── 📄 03_scraper_prompt.md
-│   │   ├── 📄 04_parser_prompt.md
-│   │   ├── 📄 05_debug_prompt.md
+│   │   ├── 📄 01_analyze_project.md
+│   │   ├── 📄 02_generate_project.md
+│   │   ├── 📄 03_generate_module.md
+│   │   ├── 📄 04_debug.md
 │   │   ├── 📄 05_refactor.md
-│   │   ├── 📄 06_docker_prompt.md
 │   │   ├── 📄 06_review.md
 │   │   ├── 📄 07_optimize.md
-│   │   └── 📄 08_create_tests.md
+│   │   ├── 📄 08_create_tests.md
+│   │   └── 📄 09_create_docker.md
 │   ├── 📁 scripts/
 │   │   └── 📁 tools/
 │   │       ├── 📄 create_project.py
 │   │       ├── 📄 dump_full_project.py
 │   │       ├── 📄 dump_structure.py
-│   │       ├── 📄 my_project_structure.txt
 │   │       └── 📄 prepare_for_ai.py
 │   ├── 📁 snippets/
 │   │   └── 📄 Туда можно складывать маленькие куски.txt
@@ -81,7 +41,6 @@ UPWORK-ALL/
 │   │   ├── 📁 api/
 │   │   ├── 📁 beautifulsoup/
 │   │   ├── 📁 docker/
-│   │   │   └── 📄 Dockerfile
 │   │   ├── 📁 infinite_scroll/
 │   │   ├── 📁 login/
 │   │   ├── 📁 pagination/
@@ -97,20 +56,9 @@ UPWORK-ALL/
 │   │   ├── 📄 description.txt
 │   │   ├── 📄 headers.json
 │   │   ├── 📄 network.har
-│   │   ├── 📄 notes.txt
-│   │   ├── 📄 page.html
-│   │   └── 📄 traceback.txt
+│   │   └── 📄 page.html
 │   ├── 📁 AI_OUTPUT/
-│   │   ├── 📄 01_analysis_answer.md
-│   │   ├── 📄 01_analysis_prompt.md
-│   │   ├── 📄 02_project_answer.md
-│   │   ├── 📄 02_project_prompt.md
-│   │   ├── 📄 03_scraper_answer.py
-│   │   ├── 📄 03_scraper_prompt.md
-│   │   ├── 📄 04_parser_answer.py
-│   │   ├── 📄 04_parser_prompt.md
-│   │   ├── 📄 05_debug_prompt.md
-│   │   ├── 📄 5_debug_answer.md
+│   │   ├── 📄 final_prompt_for_ai.md
 │   │   └── 📄 Я бы сделал еще одну папку.txt
 │   ├── 📁 app/
 │   │   ├── 📄 browser.py
@@ -124,11 +72,8 @@ UPWORK-ALL/
 │   │   └── 📄 здесь пилим документацию.txt
 │   ├── 📁 input/
 │   ├── 📁 output/
-│   │   ├── 📄 output_results.csv
-│   │   └── 📄 output_results.json
 │   ├── 📁 tests/
 │   ├── 📁 workflows/
-│   │   ├── 📄 new_project.md
 │   │   └── 📄 Вот чего сейчас не хватает..txt
 │   ├── 📄 .env
 │   ├── 📄 docker-compose.yml
@@ -137,7 +82,6 @@ UPWORK-ALL/
 │   ├── 📄 README.md
 │   ├── 📄 requirements.txt
 │   └── 📄 Как добиться не писать лишний код.txt
-├── 📄 ai_workflow.py
 ├── 📄 check-list.txt
 ├── 📄 export_for_ai.py
 ├── 📄 my_project_structure.txt

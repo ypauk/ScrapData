@@ -1,136 +1,104 @@
-"""
-⚠️ ДЕМО-ПРИМЕР, А НЕ УНИВЕРСАЛЬНЫЙ ДЕФОЛТ ⚠️
-
-Код ниже — рабочий сквозной пример парсинга объявлений OLX (авто: название,
-цена, вид топлива), созданный для демонстрации полного цикла workflow
-(`ai_workflow.py analyze/project/module scraper/module parser`) на реальном
-сайте. Селекторы (`css-1sw7q4x`, `css-wlcw7o`, `data-testid="ad-price"` и т.д.)
-специфичны именно для OLX и НЕ подходят для других сайтов "как есть".
-
-Для нового заказа этот файл нужно заменить одним из способов:
-  1. python ai_workflow.py module parser <project_name>
-     (сгенерирует промпт для ИИ на основе анализа/плана нового сайта,
-     ответ ИИ сохраняется в AI_OUTPUT/04_parser_answer.py и переносится сюда)
-  2. Вручную переписать `parse_single_item`/`parse_listing` под структуру
-     карточек нового сайта, сохранив сигнатуру `parse_html_data(html_contents)`,
-     которую вызывает `app/main.py`.
-
-Модуль `app/html_parser.py` (HtmlParser) — универсальный и НЕ требует правок,
-используй его безопасные методы (`select_one`, `find`, `get_text`, `get_attr`
-и т.д.) при написании парсера для нового сайта. Аналогично, для приведения
-извлечённых значений к консистентному формату (числа, даты, bool, URL и т.д.)
-используй `app/data_normalizer.py` (DataNormalizer) вместо ручного разбора
-строк прямо здесь.
-"""
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 from typing import List, Dict, Any
-from app.html_parser import HtmlParser
-from app.data_normalizer import DataNormalizer
-from app.utils import log_message
+from bs4 import BeautifulSoup
 
-
-def parse_single_item(card) -> Dict[str, Any]:
+def parse_single_item(element) -> Dict[str, Any]:
     """
-    Извлекает целевые поля (название, цена, топливо) из структуры одной карточки товара.
-
-    Args:
-        card (bs4.element.Tag): Объект тега одной карточки объявления.
-
-    Returns:
-        dict: Словарь с извлеченными данными объявления.
+    Вспомогательная функция для парсинга одного конкретного элемента 
+    (например, одной карточки товара, одной строки таблицы).
+    Именно этот кусок ИИ будет переписывать под селекторы конкретного сайта.
     """
-    # 1. Извлечение названия (безопасно через HtmlParser: не бросает исключение,
-    #    если элемент отсутствует, и нормализует пробелы/переносы строк).
-    title_element = HtmlParser.find(card, "h4", class_="css-wlcw7o")
-    title = HtmlParser.get_text(title_element, default="")
+    item_data = {}
+    
+    try:
+        # --- Пример базовой логики (заменяется под ТЗ клиента) ---
+        # Находим название товара
+        title_node = element.select_one(".product-title, h1, h2")
+        item_data["title"] = title_node.get_text(strip=True) if title_node else None
+        
+        # Находим цену
+        price_node = element.select_one(".price, .amount")
+        item_data["price"] = price_node.get_text(strip=True) if price_node else None
+        
+        # Находим ссылку
+        link_node = element.select_one("a")
+        item_data["url"] = link_node.get("href") if link_node else None
+        # ---------------------------------------------------------
+        
+    except Exception as e:
+        print(f"[{__file__}] Ошибка при парсинге элемента: {e}")
+        
+    return item_data
 
-    # 2. Извлечение цены и её нормализация через централизованный
-    #    Data Normalization слой (app/data_normalizer.py, Milestone 5) —
-    #    вместо разбора строки цены прямо здесь (DataNormalizer.normalize_price
-    #    переиспользует app.utils.clean_price, чтобы логика не дублировалась).
-    price_element = HtmlParser.find(card, "p", attrs={"data-testid": "ad-price"})
-    raw_price = HtmlParser.get_text(price_element, default="")
-    if raw_price:
-        price = DataNormalizer.normalize_price(raw_price)
-        if price is None:
-            log_message("error", f"[{__file__}] Не удалось нормализовать цену '{raw_price}'")
-    else:
-        log_message("warning", f"[{__file__}] Предупреждение: Элемент цены не найден в карточке с ID {HtmlParser.get_attr(card, 'id')}")
-        price = None
-
-    # 3. Извлечение вида топлива
-    fuel = ""
-    params_container = HtmlParser.find(card, "div", class_="css-13vv2xi")
-    param_spans = HtmlParser.find_all(params_container, "span", class_="css-h59g4b")
-    if len(param_spans) >= 3:
-        fuel = HtmlParser.get_text(param_spans[2], default="")
-    elif params_container is not None:
-        log_message("warning", f"[{__file__}] Предупреждение: Недостаточно параметров для извлечения топлива в карточке с ID {HtmlParser.get_attr(card, 'id')}")
-        fuel = "Не указано"
-
-    return {
-        "title": title,
-        "price": price,
-        "fuel": fuel
-    }
-
-def parse_listing(html: str) -> List[Dict[str, Any]]:
+def parse_html_data(raw_contents: List[str]) -> List[Dict[str, Any]]:
     """
-    Инициализирует HTML Parser, находит коллекцию всех карточек автомобилей на странице
-    и передает каждую в parse_single_item.
-
-    Args:
-        html (str): Строка сырого HTML-кода страницы.
-
-    Returns:
-        List[Dict[str, Any]]: Список словарей с данными по автомобилям.
+    Главная функция парсера. Принимает список сырых HTML-строк (страниц),
+    обрабатывает их через BeautifulSoup и собирает финальный массив словарей.
     """
-    soup = HtmlParser.parse(html)
-    if soup is None:
-        # HtmlParser.parse() уже залогировал причину (пустой/невалидный HTML).
-        return []
+    parsed_items = []
 
-    cards = HtmlParser.find_all(soup, "div", class_="css-1sw7q4x")
+    if not raw_contents:
+        print(f"[{__file__}] Предупреждение: Получен пустой список контента для парсинга.")
+        return parsed_items
 
-    if not cards:
-        log_message("warning", f"[{__file__}] Предупреждение: Карточки объявлений на странице не найдены.")
-        return []
-
-    log_message("info", f"[{__file__}] Найдено карточек для парсинга: {len(cards)}")
-
-    results = []
-    for card in cards:
-        try:
-            item_data = parse_single_item(card)
-            results.append(item_data)
-        except Exception as e:
-            card_id = HtmlParser.get_attr(card, "id", "unknown")
-            log_message("error", f"[{__file__}] Критическая ошибка при парсинге карточки ID {card_id}: {e}")
+    for index, html_content in enumerate(raw_contents, start=1):
+        if not html_content:
             continue
-
-    return results
-
-def parse_html_data(html_contents: List[str]) -> List[Dict[str, Any]]:
-    """
-    Точка интеграции с главным оркестратором main.py.
-    Принимает список строк HTML и возвращает агрегированные результаты.
-
-    Args:
-        html_contents (List[str]): Список строк сырого HTML.
-
-    Returns:
-        List[Dict[str, Any]]: Общий список спарсенных данных.
-    """
-    all_results = []
-    log_message("info", f"[{__file__}] Начало обработки {len(html_contents)} страниц(ы)...")
-
-    for idx, html in enumerate(html_contents, 1):
+            
         try:
-            page_results = parse_listing(html)
-            all_results.extend(page_results)
-        except Exception as e:
-            log_message("error", f"[{__file__}] Не удалось обработать страницу #{idx}: {e}")
-            continue
+            # Инициализируем BeautifulSoup для текущей страницы
+            soup = BeautifulSoup(html_content, "html.parser")
+            
+            # --- Логика поиска контейнеров (заменяется под ТЗ клиента) ---
+            # Например, ищем все карточки товаров на странице
+            items_containers = soup.select(".product-card, .item")
+            # ---------------------------------------------------------
+            
+            if not items_containers:
+                # Если кастомных контейнеров нет, можно спарсить страницу целиком как один элемент
+                single_item = parse_single_item(soup)
+                if single_item:
+                    parsed_items.append(single_item)
+                continue
 
-    log_message("info", f"[{__file__}] Парсинг успешно завершен. Всего собрано элементов: {len(all_results)}")
-    return all_results
+            # Парсим каждый найденный контейнер
+            for element in items_containers:
+                item_data = parse_single_item(element)
+                
+                # Добавляем элемент, только если он не пустой (есть хотя бы одно поле)
+                if any(item_data.values()):
+                    parsed_items.append(item_data)
+                    
+            print(f"[{__file__}] Страница {index}: Успешно спарсено элементов: {len(items_containers)}")
+            
+        except Exception as e:
+            print(f"[{__file__}] Ошибка при обработке страницы {index}: {e}")
+
+    print(f"[{__file__}] Всего извлечено элементов: {len(parsed_items)}")
+    return parsed_items
+
+
+# Пример использования (для дебага самого файла)
+if __name__ == "__main__":
+    print(f"[{__file__}] Запуск теста парсера...")
+    
+    # Фейковый HTML для проверки структуры
+    mock_html = """
+    <html>
+        <div class="product-card">
+            <h2 class="product-title"> Смартфон X </h2>
+            <span class="price"> $999 </span>
+            <a href="https://example.com/item1">Подробнее</a>
+        </div>
+        <div class="product-card">
+            <h2 class="product-title"> Наушники Y </h2>
+            <span class="price"> $150 </span>
+            <a href="https://example.com/item2">Подробнее</a>
+        </div>
+    </html>
+    """
+    
+    results = parse_html_data([mock_html])
+    print("Результат теста:", results)
