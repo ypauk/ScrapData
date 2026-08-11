@@ -17,7 +17,97 @@
 
 Ниже будет описание проекта клиента.
 
-{{CLIENT_DESCRIPTION}}
+
+
+--- ФАЙЛ: description.txt ---
+надо извлечданные из одной страницы:
+https://www.olx.ua/uk/transport/legkovye-avtomobili/
+
+название
+цена
+вид топлива
+
+
+--- ФАЙЛ: answers.txt ---
+формат вывода JSON
+надо только страницу 1
+...
+
+--- ФАЙЛ: cookies.json ---
+
+
+--- ФАЙЛ: headers.json ---
+
+
+--- СЖАТЫЙ HTML: page.html ---
+<div class="css-1sw7q4x" id="926825655">
+ <div class="css-ri9uxm">
+  <div class="css-hvzem4">
+   <div class="css-e59vz0">
+    <a class="css-1tqlkj0" href="/d/uk/obyavlenie/prodam-vaz-2104-inzhektor-ID10IRGT.html?search_reason=search%7Corganic">
+     <div class="css-11ow61k">
+      <div class="css-gl6djm">
+       <img class="css-8wsg1m" src="https://ireland.apollo.olxcdn.com:443/v1/files/j7i62vhov0t91-UA/image;s=216x152;q=50"/>
+      </div>
+     </div>
+     <div class="css-6gymc3">
+      <div class="css-1av34ht">
+       <div class="css-3xiokn">
+       </div>
+      </div>
+     </div>
+    </a>
+   </div>
+   <div class="css-ih6nf2">
+    <div class="css-u2ayx9">
+     <a class="css-1tqlkj0" href="/d/uk/obyavlenie/prodam-vaz-2104-inzhektor-ID10IRGT.html?search_reason=search%7Corganic">
+      <h4 class="css-wlcw7o">
+       Продам ваз 2104 инжектор
+      </h4>
+     </a>
+     <p class="css-61fb99">
+      51 165.64 грн.
+      <span class="css-zf56ej">
+       Договірна
+      </span>
+      <span class="css-zf56ej">
+      </span>
+     </p>
+    </div>
+    <div class="css-16y676b">
+     <div class="flex flex-wrap items-end gap-(--spacing50)">
+     </div>
+     <div class="css-1smnjed">
+     </div>
+    </div>
+    <div class="css-49upc6">
+     <p class="css-1453zif">
+      Самар - Сьогодні о 21:30
+     </p>
+     <div class="css-13vv2xi">
+      <span class="css-t4djs0">
+       <span class="css-h59g4b">
+        2007  150 тис.км.
+       </span>
+       <span class="css-h59g4b">
+        Механічна
+       </span>
+       <span class="css-h59g4b">
+        Газ / бензин
+       </span>
+      </span>
+     </div>
+    </div>
+    <button class="css-kmyhfy">
+     <div class="css-1iakee2">
+      Підписатися
+     </div>
+    </button>
+   </div>
+  </div>
+ </div>
+</div>
+
 
 ---
 
@@ -223,12 +313,11 @@
 Например:
 
 API вместо HTML.
-Активно искать API в network.har или через консоль разработчика.
+Активно искать API в network.har или через консоль разработчика
+requests вместо Playwright.
 CSV вместо базы данных.
 Если существует более простое решение —
 обязательно предложи его.
-
-**ПРИМЕЧАНИЕ:** Фреймворк проекта использует PlaywrightEngine для scraper.py (зафиксировано в main.py). Рекомендация "requests вместо Playwright" НЕ применима — scraper.py всегда получает готовый PlaywrightEngine. Однако можно рекомендовать упрощение логики (например, парсить только листинг без перехода на страницы товаров, если все данные есть в категории).
 
 ## 13. Итоговая рекомендация
 

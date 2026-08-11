@@ -1,0 +1,12 @@
+# Browser automation
+.browser_profile/
+.prompt_splitter_state.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE
+.vscode/
+.idea/

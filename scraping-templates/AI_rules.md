@@ -10,11 +10,11 @@
 
 5. Предпочитать простое решение сложному.
 
-6. Сначала искать API.
+6. scraper.py ВСЕГДА использует PlaywrightEngine (передаётся из main.py). НЕ использовать requests/httpx в scraper.py.
 
-7. Если API нет — рассматривать requests + BeautifulSoup.
+7. parser.py использует BeautifulSoup для парсинга HTML. НЕ делает сетевых запросов.
 
-8. Playwright использовать только при необходимости.
+8. Если данные доступны через API — можно использовать engine.page.evaluate() для перехвата XHR/fetch внутри Playwright, но НЕ добавлять requests.
 
 9. Код должен быть модульным.
 

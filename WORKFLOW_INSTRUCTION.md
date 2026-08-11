@@ -13,6 +13,8 @@ ScrapData — конвейер для выполнения заказов на �
 ```
 ScrapData/
 ├── ai_workflow.py          ← Главный скрипт (запуск всех команд)
+├── prompt_splitter.py      ← Разбивка/автоотправка промптов в ChatGPT
+├── clear_chat.py           ← Удаление активного чата ChatGPT (для тестов)
 ├── export_for_ai.py        ← Дамп проекта в текст (для отладки)
 ├── check-list.txt          ← Вопросы перед стартом
 ├── САМОЕ ГЛАВНОЕ.txt       ← Краткий workflow
@@ -42,11 +44,17 @@ python ai_workflow.py project имя_проекта
 python ai_workflow.py scraper имя_проекта
 python ai_workflow.py parser имя_проекта
 
+# ИЛИ: всё сразу одной командой (полная автоматизация)
+python ai_workflow.py pipeline имя_проекта --auto
+
 # 4. При ошибке
 python ai_workflow.py debug имя_проекта
 
 # 5. Перед сдачей
 python ai_workflow.py docker имя_проекта
+
+# 6. Очистка для повторного теста
+python ai_workflow.py clean имя_проекта
 ```
 
 ---
@@ -322,7 +330,56 @@ docker compose up --build
 
 ---
 
-### ШАГ 11. Архивация
+### ШАГ 11. Очистка для повторного тестирования
+
+Если нужно начать генерацию с нуля (при тестировании фреймворка):
+
+```bash
+python ai_workflow.py clean amazon_scraper
+```
+
+**Что происходит:**
+- Все файлы в `AI_OUTPUT/` очищаются (содержимое = пусто, файлы остаются)
+- `app/scraper.py` очищается
+- `app/parser.py` очищается
+
+После этого можно прогнать pipeline заново.
+
+---
+
+### ШАГ 12. Полный конвейер одной командой (pipeline)
+
+Вместо запуска каждого этапа вручную:
+
+```bash
+# Полностью автоматический (отправляет всё в ChatGPT через браузер)
+python ai_workflow.py pipeline amazon_scraper --auto
+
+# Полуавтоматический (генерирует промпт, ждёт Enter после ручного ответа)
+python ai_workflow.py pipeline amazon_scraper
+```
+
+**Что происходит:**
+- Последовательно выполняет: analyze → project → scraper → parser
+- С `--auto`: каждый промпт автоматически отправляется в ChatGPT, ответ сохраняется, и переход к следующему этапу
+- Без `--auto`: генерирует промпт, показывает путь, ждёт Enter — ты вручную копируешь промпт, получаешь ответ, сохраняешь его и нажимаешь Enter для перехода
+
+**Типичный цикл тестирования:**
+```bash
+python ai_workflow.py clean test1        # сбросить файлы проекта
+python clear_chat.py --new               # удалить старый чат в ChatGPT, открыть новый
+python ai_workflow.py pipeline test1 --auto  # прогнать заново
+cd projects/test1 && python app/main.py   # проверить результат
+```
+
+**Или одной строкой:**
+```bash
+python ai_workflow.py clean test1 && python clear_chat.py --new && python ai_workflow.py pipeline test1 --auto
+```
+
+---
+
+### ШАГ 13. Архивация
 
 ```bash
 python ai_workflow.py archive amazon_scraper

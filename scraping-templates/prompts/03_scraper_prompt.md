@@ -52,31 +52,86 @@
 
 Сгенерируй **полный рабочий код** для `{{MODULE_FILE}}` (модуль: **{{MODULE_NAME}}**).
 
+---
+
+## КОНТРАКТ main.py (НЕИЗМЕНЯЕМЫЙ, ВЫСШИЙ ПРИОРИТЕТ)
+
+`main.py` уже написан, протестирован и НЕ ПОДЛЕЖИТ изменению. Он импортирует и вызывает:
+
+```python
+from app.scraper import fetch_page_data
+from app.parser import parse_listing, parse_html_data
+
+# main.py делает:
+with PlaywrightEngine() as engine:
+    raw_pages_content = fetch_page_data(engine)  # List[str]
+
+# Затем:
+page_records = parse_listing(html)         # один HTML → List[Dict]
+scraped_results = parse_html_data(raw_pages_content)  # List[str] → List[Dict]
+```
+
+### Обязательные сигнатуры
+
+**scraper.py:**
+```python
+def fetch_page_data(engine: PlaywrightEngine) -> List[str]:
+    """
+    Принимает ЗАПУЩЕННЫЙ PlaywrightEngine (браузер уже открыт, cookies/proxy применены).
+    Выполняет навигацию, пагинацию, сбор HTML.
+    Возвращает список HTML-строк (одна строка = одна страница категории ИЛИ товара).
+    """
+```
+
+**parser.py:**
+```python
+def parse_listing(html: str) -> List[Dict[str, Any]]:
+    """Парсит HTML одной страницы. Возвращает список записей (dict на каждый товар)."""
+
+def parse_html_data(raw_contents: List[str]) -> List[Dict[str, Any]]:
+    """Парсит список HTML-страниц. Вызывает parse_listing() для каждой. Возвращает объединённый список."""
+```
+
+### Критические правила
+
+- **ИГНОРИРУЙ** рекомендации из analysis/plan по выбору HTTP-движка (requests, httpx и т.д.). Движок ВСЕГДА `PlaywrightEngine` — он передаётся в `fetch_page_data()` уже готовым.
+- **НЕ ДОБАВЛЯЙ** `import requests` в scraper.py.
+- Для навигации используй: `engine.goto(url)`, `engine.content()`, `engine.wait_for_selector(...)`, `engine.page`.
+- Задержки между страницами выполняются АВТОМАТИЧЕСКИ внутри `engine.goto()` (через Delay Manager).
+- parser.py МОЖЕТ использовать BeautifulSoup — это для парсинга HTML, не для сбора.
+- Plan/analysis описывают ЛОГИКУ (селекторы, пагинация, поля) — используй её. Но выбор движка НЕ из плана.
+
+---
+
 ## Требования
 
 1. **Только функции** — без классов.
 2. **Один файл** — весь код модуля в одном ответе.
-3. **Следуй project_plan.md** — имена функций, сигнатуры, алгоритм.
-4. **Не трогай ядро** — `main.py` уже вызывает `fetch_page_data()` и `parse_html_data()`. Сохрани эти имена или обнови только если план явно требует другие.
+3. **Сигнатуры строго из контракта выше** — они неизменяемы.
+4. **Логику бери из plan** — какие селекторы, какая пагинация, какие поля, как обходить.
 5. **Минимум зависимостей** — используй только то, что уже есть в проекте.
 6. **Обработка ошибок** — try/except на уровне страниц/элементов, не падай на одной ошибке.
 7. **Логирование** — `print(f"[{__file__}] ...")` как в шаблоне.
 
 ## Если модуль = scraper
 
-- Отвечает **только** за сеть, навигацию, пагинацию, скролл, клики.
-- Возвращает `List[str]` — список сырого HTML (или JSON-строк).
-- Не парсит DOM — это задача parser.py.
-- Используй `app.config` для таймаутов и путей.
-- Используй `random_delay()` из `app.utils` между запросами.
+- Принимает `engine: PlaywrightEngine` (уже запущен, cookies/proxy подключены).
+- Использует `engine.goto(url)` для навигации.
+- Использует `engine.content()` для получения HTML после загрузки.
+- Использует `engine.wait_for_selector(css)` для ожидания элементов.
+- Использует `engine.page` для JS (eval, click, scroll).
+- Отвечает **только** за навигацию, пагинацию, скролл, клики.
+- Возвращает `List[str]` — список сырого HTML.
+- НЕ парсит DOM — это задача parser.py.
+- Используй `app.config.BASE_URL` как стартовый URL.
 
 ## Если модуль = parser
 
-- Отвечает **только** за извлечение данных из сырого контента.
-- Принимает `List[str]`, возвращает `List[Dict[str, Any]]`.
-- Используй BeautifulSoup для HTML.
-- Сохрани функцию `parse_single_item()` для парсинга одного элемента.
-- Поля результата — строго по project_plan.md.
+- Отвечает **только** за извлечение данных из сырого HTML.
+- ОБЯЗАТЕЛЬНО экспортирует ОБЕ функции: `parse_listing(html)` и `parse_html_data(raw_contents)`.
+- `parse_html_data` = вызывает `parse_listing` для каждого HTML и объединяет результаты.
+- Используй BeautifulSoup для парсинга.
+- Поля результата — строго по DS-PRK-Scraper.json из AI_INPUT.
 
 ---
 
@@ -94,5 +149,7 @@
 **ЗАПРЕЩЕНО:**
 - Писать код для других файлов.
 - Добавлять GUI, CLI, меню.
-- Добавлять функции, которых нет в project_plan.md.
+- Использовать `requests`/`httpx` в scraper.py.
+- Менять сигнатуры из контракта.
 - Использовать классы.
+- Запрашивать дополнительные файлы (project_plan.md и т.п.) — всё нужное УЖЕ в этом промпте.

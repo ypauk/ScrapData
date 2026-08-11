@@ -1,0 +1,22 @@
+Summary
+Scrape a website for all the required info — details are in the Google Sheet, ask if anything's unclear. Before the full scrape, send a test file with 2 products. Every field must be in its own column with a consistent header — no mixed data across columns.
+
+Please let me know when you can deliver.
+
+https://docs.google.com/spreadsheets/d/1Ru8hf8jBDAhUSCTGGsm_fNueRIyfd9V19QD6ecPrnKw/edit?usp=sharing
+
+
+The Google Sheet has already been fully converted into:
+
+DS-PRK-Scraper.json
+IMPORTANT
+
+DS-PRK-Scraper.json is the complete and authoritative specification of the required output structure.
+
+Do NOT try to access, retrieve, or reconstruct the Google Sheet.
+
+Do NOT make assumptions about the required fields.
+
+Do NOT add, remove, rename, merge, split, or reinterpret output columns unless explicitly instructed to do so.
+
+Everything required from the Google Sheet that is relevant to the scraper output has already been transferred to DS-PRK-Scraper.json.

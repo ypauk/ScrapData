@@ -13,6 +13,8 @@
     python ai_workflow.py docker [project_name]
     python ai_workflow.py review [project_name]
     python ai_workflow.py improve [project_name]
+    python ai_workflow.py clean [project_name]
+    python ai_workflow.py pipeline [project_name] [--auto]
 
 Если project_name не указан — берётся текущая папка (если это проект).
 
@@ -29,6 +31,17 @@ from typing import Optional
 
 import json
 from datetime import datetime
+
+# ---------------------------------------------------------------------------
+# Auto-send конфигурация (для --auto)
+# ---------------------------------------------------------------------------
+
+AUTO_SEND_DEFAULTS = {
+    "max_lines": 400,
+    "delay": 2,
+    "timeout": 300,
+    "retries": 3,
+}
 
 try:
     from bs4 import BeautifulSoup
@@ -73,6 +86,7 @@ PLATFORM_TASK_FILES = {
 
 CORE_FILES = [
     "app/main.py",
+    "app/playwright_engine.py",
     "app/browser.py",
     "app/config.py",
     "app/exporter.py",
@@ -388,16 +402,247 @@ def create_default_ai_output_files(project: Path) -> None:
         write_text(ai_output_dir / filename, "")
 
 
+def apply_answer_to_app(stage: str, project: Path) -> None:
+    """Копирует ответ ИИ (scraper/parser) в app/ если файл не пустой."""
+    if stage not in MODULE_FILES:
+        return
+
+    answer_file = project / "AI_OUTPUT" / STAGES[stage]["answer"]
+    target_file = project / MODULE_FILES[stage]
+
+    if not answer_file.exists():
+        return
+
+    content = answer_file.read_text(encoding="utf-8").strip()
+    if not content:
+        return
+
+    write_text(target_file, content)
+    ok(f"Скопировано: {STAGES[stage]['answer']} → {MODULE_FILES[stage]}")
+
+
 def next_step_hint(stage: str, project: Path) -> None:
     # Получаем имена файлов из нашего словаря STAGES
     prompt_file = project / "AI_OUTPUT" / STAGES[stage]["prompt"]
     answer_file = project / "AI_OUTPUT" / STAGES[stage]["answer"]
-    
+
     print()
     info("Следующий шаг:")
     print(f"1. Открой: {prompt_file}")
     print(f"2. Отправь в ChatGPT")
     print(f"3. Сохрани ответ в: {answer_file}")
+
+
+def auto_send_prompt(prompt_path: Path, answer_path: Path, max_lines: int,
+                     delay: int, timeout: int, retries: int,
+                     dry_run: bool = False, force: bool = False,
+                     restart: bool = False, no_interact: bool = False) -> None:
+    """
+    Автоматически разбивает prompt и отправляет в ChatGPT через prompt_splitter.
+    Ответ сохраняется в answer_path.
+    """
+    from prompt_splitter import (
+        split_by_sections, group_sections, wrap_parts,
+        calculate_file_hash, load_state, save_state, clear_state,
+        check_playwright_available, launch_browser, open_chatgpt,
+        send_message, wait_for_response_complete, get_last_response,
+        verify_acknowledgement, find_chat_input,
+        BROWSER_PROFILE_DIR, WORKSPACE_ROOT, STATE_FILE,
+    )
+
+    text = prompt_path.read_text(encoding="utf-8", errors="replace")
+    total_lines = text.count("\n") + 1
+
+    # Разбиваем если нужно
+    if total_lines <= max_lines:
+        parts = [text]
+    else:
+        sections = split_by_sections(text)
+        raw_parts = group_sections(sections, max_lines)
+        parts = wrap_parts(raw_parts)
+
+    total = len(parts)
+    file_hash = calculate_file_hash(prompt_path)
+
+    # --- Header ---
+    print(f"\n{'=' * 60}")
+    print(f"  ChatGPT Auto Sender")
+    print(f"{'=' * 60}")
+    print(f"\n  File: {prompt_path.name}")
+    print(f"  Lines: {total_lines}")
+    print(f"  Parts: {total}")
+    print(f"  Answer: {answer_path.name}")
+    print(f"\n  Browser: Chromium")
+    print(f"  Profile: {BROWSER_PROFILE_DIR.relative_to(WORKSPACE_ROOT)}")
+    print()
+
+    if not check_playwright_available():
+        die(
+            "Playwright не установлен.\n"
+            "  Установка:\n"
+            "    pip install playwright\n"
+            "    playwright install chromium"
+        )
+
+    # --- Resume ---
+    start_part = 0
+    if not restart:
+        state = load_state()
+        if state and state.get("file") == str(prompt_path):
+            if state.get("file_hash") != file_hash:
+                print("  WARNING: Исходный prompt изменился. Начинаем заново.\n")
+                clear_state()
+            elif state.get("last_completed_part", 0) > 0:
+                completed = state["last_completed_part"]
+                print(f"  Обнаружен предыдущий прогресс: {completed}/{total} частей.\n")
+                if no_interact:
+                    start_part = completed
+                else:
+                    answer = input(f"  Продолжить с части {completed + 1}? [Y/n] ").strip().lower()
+                    if answer in ("", "y", "yes", "д", "да"):
+                        start_part = completed
+                    else:
+                        clear_state()
+    else:
+        clear_state()
+
+    # --- Dry run ---
+    if dry_run:
+        print("  --- DRY RUN ---")
+        print(f"  Частей к отправке: {total - start_part}")
+        for i in range(start_part, total):
+            lines_count = parts[i].count("\n") + 1
+            chars_count = len(parts[i])
+            label = "ЗАДАЧА" if i == total - 1 else "Контекст"
+            print(f"    [{i+1}/{total}] {label}: {lines_count} строк, {chars_count} символов")
+        print(f"\n  Ответ будет сохранён в: {answer_path.name}")
+        print("\n  Playwright: OK")
+        print("  Сообщения НЕ будут отправлены.")
+        print(f"\n{'=' * 60}")
+        return
+
+    # --- Launch browser ---
+    print("  Запуск браузера...")
+    pw, context, page = launch_browser()
+
+    try:
+        print("  Открываю ChatGPT...")
+        open_chatgpt(page)
+
+        print(f"\n{'=' * 60}")
+        print("  ChatGPT готов.")
+        if no_interact:
+            import time as _time
+            print("  Автоматический режим — старт через 3 сек...")
+            _time.sleep(3)
+        else:
+            print("  Открой нужный чат или создай новый.")
+            input("  Нажми Enter для начала автоматической отправки...")
+        print(f"{'=' * 60}\n")
+
+        import time
+
+        for i in range(start_part, total):
+            part_num = i + 1
+            is_last = (i == total - 1)
+
+            if is_last:
+                print(f"  [{part_num}/{total}] Sending final task...")
+            else:
+                print(f"  [{part_num}/{total}] Sending...")
+
+            try:
+                send_message(page, parts[i], retries=retries)
+            except RuntimeError as e:
+                print(f"\n  [ERROR] Не удалось отправить часть {part_num}/{total}.")
+                print(f"  Причина: {e}")
+                if no_interact:
+                    save_state(str(prompt_path), file_hash, total, i)
+                    print("  Автоматический режим — прерываем.")
+                    return
+                while True:
+                    action = input("  [R] Retry / [A] Abort: ").strip().upper()
+                    if action == "R":
+                        try:
+                            send_message(page, parts[i], retries=retries)
+                            break
+                        except RuntimeError as e2:
+                            print(f"  [ERROR] Повторная ошибка: {e2}")
+                    elif action == "A":
+                        save_state(str(prompt_path), file_hash, total, i)
+                        print("  Прервано. Браузер оставлен открытым.")
+                        return
+
+            print(f"  [{part_num}/{total}] Waiting for response...")
+            try:
+                wait_for_response_complete(page, timeout=timeout)
+            except TimeoutError as e:
+                print(f"  [ERROR] {e}")
+                if no_interact:
+                    save_state(str(prompt_path), file_hash, total, i)
+                    print("  Автоматический режим — прерываем по таймауту.")
+                    return
+                while True:
+                    action = input("  [R] Retry wait / [A] Abort: ").strip().upper()
+                    if action == "R":
+                        try:
+                            wait_for_response_complete(page, timeout=timeout)
+                            break
+                        except TimeoutError:
+                            pass
+                    elif action == "A":
+                        save_state(str(prompt_path), file_hash, total, i)
+                        return
+
+            if not is_last:
+                response_text = get_last_response(page)
+                ack_ok = verify_acknowledgement(response_text, part_num)
+                if ack_ok:
+                    print(f"  [{part_num}/{total}] Acknowledgement ✓")
+                elif force or no_interact:
+                    print(f"  [{part_num}/{total}] Acknowledgement ? (auto/force)")
+                else:
+                    print(f"\n  WARNING: Неожиданный ответ после части {part_num}.")
+                    if response_text:
+                        print(f"  Ответ: {response_text[:200]}")
+                    answer_input = input("  Продолжить? [y/N] ").strip().lower()
+                    if answer_input not in ("y", "yes", "д", "да"):
+                        save_state(str(prompt_path), file_hash, total, i)
+                        return
+            else:
+                print(f"  [{part_num}/{total}] Response completed ✓")
+
+            save_state(str(prompt_path), file_hash, total, part_num)
+
+            if not is_last:
+                time.sleep(delay)
+
+            print()
+
+        # --- Save answer ---
+        print("  Сохраняю финальный ответ...")
+        final_response = get_last_response(page)
+        if final_response:
+            answer_path.parent.mkdir(parents=True, exist_ok=True)
+            answer_path.write_text(final_response, encoding="utf-8")
+            print(f"  ✓ Ответ сохранён: {answer_path}")
+        else:
+            print("  ✗ Не удалось получить текст ответа.")
+            print("    Скопируй ответ вручную из окна ChatGPT.")
+
+        clear_state()
+        print(f"\n{'=' * 60}")
+        print(f"  DONE")
+        print(f"{'=' * 60}")
+
+    except KeyboardInterrupt:
+        print("\n\n  Прервано (Ctrl+C). Браузер оставлен открытым.")
+    finally:
+        try:
+            context.close()
+            pw.stop()
+        except Exception:
+            pass
 
 
 # ---------------------------------------------------------------------------
@@ -753,6 +998,118 @@ def cmd_platform(project: Path, mode: str) -> None:
     print(f"3. Сохрани ответ в: {project / 'AI_OUTPUT' / STAGES[mode]['answer']}")
 
 
+def cmd_clean(project: Path) -> None:
+    """Очищает AI_OUTPUT + scraper.py + parser.py + output/ для чистого теста."""
+    ai_output = project / "AI_OUTPUT"
+    if not ai_output.exists():
+        die(f"Папка не найдена: {ai_output}")
+
+    count = 0
+    for item in ai_output.iterdir():
+        if item.is_file():
+            item.write_text("", encoding="utf-8")
+            count += 1
+
+    for module in ("scraper.py", "parser.py"):
+        module_path = project / "app" / module
+        if module_path.exists():
+            module_path.write_text("", encoding="utf-8")
+            count += 1
+
+    output_dir = project / "output"
+    if output_dir.exists():
+        for item in output_dir.iterdir():
+            if item.name == ".gitkeep":
+                continue
+            if item.is_file():
+                item.unlink()
+                count += 1
+            elif item.is_dir():
+                shutil.rmtree(item)
+                count += 1
+
+    ok(f"Очищено: {count} (AI_OUTPUT + app/scraper.py, app/parser.py, output/)")
+
+
+def cmd_pipeline(project: Path, opts) -> None:
+    """
+    Полный конвейер: analyze -> project -> scraper -> parser.
+    Каждый этап генерирует промпт и (при --auto) отправляет в ChatGPT,
+    ожидает ответ, сохраняет — и переходит к следующему.
+    """
+    stages_order = ["analyze", "project", "scraper", "parser"]
+
+    stage_commands = {
+        "analyze": cmd_analyze,
+        "project": cmd_project,
+        "scraper": cmd_scraper,
+        "parser": cmd_parser,
+    }
+
+    total = len(stages_order)
+
+    for idx, stage in enumerate(stages_order, 1):
+        print(f"\n{'=' * 60}")
+        print(f"  PIPELINE [{idx}/{total}]: {stage}")
+        print(f"{'=' * 60}\n")
+
+        stage_commands[stage](project)
+
+        if opts.auto:
+            stage_info = STAGES[stage]
+            prompt_path = project / "AI_OUTPUT" / stage_info["prompt"]
+            answer_path = project / "AI_OUTPUT" / stage_info["answer"]
+
+            if not prompt_path.exists():
+                die(f"Промпт не найден: {prompt_path}")
+
+            auto_send_prompt(
+                prompt_path=prompt_path,
+                answer_path=answer_path,
+                max_lines=opts.max_lines,
+                delay=opts.delay,
+                timeout=opts.timeout,
+                retries=opts.retries,
+                dry_run=opts.dry_run,
+                force=opts.force,
+                restart=opts.restart,
+                no_interact=True,
+            )
+
+            if not answer_path.exists() or not answer_path.read_text(encoding="utf-8").strip():
+                die(f"Ответ не получен для этапа '{stage}'. Pipeline остановлен.")
+
+            apply_answer_to_app(stage, project)
+            ok(f"Этап '{stage}' завершён. Ответ сохранён в {answer_path.name}")
+        else:
+            answer_path = project / "AI_OUTPUT" / STAGES[stage]["answer"]
+            print(f"\n  [!] --auto не указан. Ручной режим.")
+            print(f"      1. Открой промпт: {project / 'AI_OUTPUT' / STAGES[stage]['prompt']}")
+            print(f"      2. Отправь в ChatGPT")
+            print(f"      3. Сохрани ответ в: {answer_path}")
+
+            while True:
+                input(f"\n  Нажми Enter когда ответ для '{stage}' будет сохранён (или Ctrl+C для выхода)...")
+
+                if not answer_path.exists():
+                    print(f"  [!] Файл не найден: {answer_path}")
+                    print(f"      Создай файл и вставь туда ответ ИИ.")
+                    continue
+
+                if not answer_path.read_text(encoding="utf-8").strip():
+                    print(f"  [!] Файл пуст: {answer_path}")
+                    print(f"      Вставь ответ ИИ в этот файл и нажми Enter снова.")
+                    continue
+
+                apply_answer_to_app(stage, project)
+                break
+
+    print(f"\n{'=' * 60}")
+    print(f"  PIPELINE ЗАВЕРШЁН УСПЕШНО")
+    print(f"  Все этапы: {' -> '.join(stages_order)}")
+    print(f"{'=' * 60}\n")
+
+
 def cmd_review(project: Path) -> None:
     cmd_platform(project, "review")
 
@@ -775,17 +1132,29 @@ def build_parser() -> argparse.ArgumentParser:
   python ai_workflow.py new amazon_scraper
   python ai_workflow.py analyze amazon_scraper
   python ai_workflow.py project amazon_scraper
-  python ai_workflow.py module scraper amazon_scraper
-  python ai_workflow.py module parser amazon_scraper
+  python ai_workflow.py scraper amazon_scraper
+  python ai_workflow.py parser amazon_scraper
   python ai_workflow.py debug amazon_scraper
   python ai_workflow.py docker amazon_scraper
   python ai_workflow.py review amazon_scraper
   python ai_workflow.py improve amazon_scraper
+
+Очистка AI_OUTPUT (для тестов):
+  python ai_workflow.py clean test1
+
+Полный конвейер (все этапы подряд):
+  python ai_workflow.py pipeline test1 --auto
+  python ai_workflow.py pipeline test1            (ручной режим — ждёт Enter между этапами)
+
+Автоотправка в ChatGPT:
+  python ai_workflow.py debug amazon_scraper --auto
+  python ai_workflow.py scraper amazon_scraper --auto --max-lines 600
+  python ai_workflow.py analyze amazon_scraper --auto --dry-run
         """,
     )
     parser.add_argument(
         "command",
-        choices=["new", "analyze", "archive", "project", "scraper", "parser", "debug", "docker", "review", "improve"],
+        choices=["new", "analyze", "archive", "project", "scraper", "parser", "debug", "docker", "review", "improve", "clean", "pipeline"],
         help="Этап workflow",
     )
 
@@ -794,46 +1163,129 @@ def build_parser() -> argparse.ArgumentParser:
         nargs="*",
         help="Для new: имя проекта. Для module: scraper|parser. Опционально: имя проекта.",
     )
+
+    # Auto-send аргументы
+    parser.add_argument(
+        "--auto",
+        action="store_true",
+        help="Автоматически отправить промпт в ChatGPT через браузер",
+    )
+    parser.add_argument(
+        "--max-lines",
+        type=int,
+        default=AUTO_SEND_DEFAULTS["max_lines"],
+        help=f"Макс. строк на часть при разбивке (по умолчанию: {AUTO_SEND_DEFAULTS['max_lines']})",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Показать план разбивки без отправки",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Не проверять acknowledgement",
+    )
+    parser.add_argument(
+        "--restart",
+        action="store_true",
+        help="Начать заново, игнорируя предыдущий прогресс",
+    )
+    parser.add_argument(
+        "--delay",
+        type=int,
+        default=AUTO_SEND_DEFAULTS["delay"],
+        help=f"Задержка между частями, сек (по умолчанию: {AUTO_SEND_DEFAULTS['delay']})",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=int,
+        default=AUTO_SEND_DEFAULTS["timeout"],
+        help=f"Таймаут ожидания ответа, сек (по умолчанию: {AUTO_SEND_DEFAULTS['timeout']})",
+    )
+    parser.add_argument(
+        "--retries",
+        type=int,
+        default=AUTO_SEND_DEFAULTS["retries"],
+        help=f"Повторные попытки при ошибке (по умолчанию: {AUTO_SEND_DEFAULTS['retries']})",
+    )
     return parser
 
 
-def parse_args(raw_args: list[str]) -> tuple[str, Optional[str], Optional[str]]:
+def parse_args(raw_args: list[str]) -> tuple[str, Optional[str], Optional[str], argparse.Namespace]:
     """
     Разбирает аргументы:
       new <name>
       module <scraper|parser> [project]
-      <command> [project]
+      <command> [project] [--auto ...]
     """
-    if not raw_args:
+    parser = build_parser()
+
+    # --help без команды
+    if not raw_args or raw_args == ["-h"] or raw_args == ["--help"]:
+        if not raw_args:
+            die("Укажи команду. Пример: python ai_workflow.py analyze")
+        parser.parse_args(raw_args)
+        sys.exit(0)
+
+    # Разделяем positional и optional аргументы вручную
+    # потому что argparse не умеет nargs="*" + именованные args в таком виде
+    positional = []
+    optional = []
+    i = 0
+    while i < len(raw_args):
+        if raw_args[i].startswith("--"):
+            optional.append(raw_args[i])
+            if raw_args[i] in ("--max-lines", "--delay", "--timeout", "--retries") and i + 1 < len(raw_args):
+                i += 1
+                optional.append(raw_args[i])
+        elif raw_args[i] in ("-h",):
+            optional.append(raw_args[i])
+        else:
+            positional.append(raw_args[i])
+        i += 1
+
+    if not positional:
         die("Укажи команду. Пример: python ai_workflow.py analyze")
 
-    command = raw_args[0]
-    rest = raw_args[1:]
+    # Парсим optional
+    opts = parser.parse_args(positional[:1] + optional)
+
+    command = positional[0]
+    rest = positional[1:]
 
     if command == "new":
         if not rest:
             die("Укажи имя проекта: python ai_workflow.py new amazon_scraper")
-        return command, rest[0], None
+        return command, rest[0], None, opts
 
     if command == "module":
         if not rest:
             die("Укажи модуль: python ai_workflow.py module scraper")
         module_name = rest[0]
         project_name = rest[1] if len(rest) > 1 else None
-        return command, project_name, module_name
+        return command, project_name, module_name, opts
 
     project_name = rest[0] if rest else None
-    return command, project_name, None
+    return command, project_name, None, opts
 
 
 def main() -> None:
-    command, project_name, module_name = parse_args(sys.argv[1:])
+    command, project_name, module_name, opts = parse_args(sys.argv[1:])
 
     if command == "new":
         cmd_new(project_name)  # type: ignore[arg-type]
         return
 
     project = find_project(project_name)
+
+    if command == "clean":
+        cmd_clean(project)
+        return
+
+    if command == "pipeline":
+        cmd_pipeline(project, opts)
+        return
 
     dispatch = {
         "analyze": lambda: cmd_analyze(project),
@@ -847,8 +1299,32 @@ def main() -> None:
         "improve": lambda: cmd_improve(project),
     }
 
-
+    # Генерируем промпт
     dispatch[command]()
+
+    # Если --auto — автоматически отправляем в ChatGPT
+    if opts.auto and command in STAGES:
+        stage_info = STAGES[command]
+        prompt_path = project / "AI_OUTPUT" / stage_info["prompt"]
+        answer_path = project / "AI_OUTPUT" / stage_info["answer"]
+
+        if not prompt_path.exists():
+            die(f"Промпт не найден: {prompt_path}")
+
+        auto_send_prompt(
+            prompt_path=prompt_path,
+            answer_path=answer_path,
+            max_lines=opts.max_lines,
+            delay=opts.delay,
+            timeout=opts.timeout,
+            retries=opts.retries,
+            dry_run=opts.dry_run,
+            force=opts.force,
+            restart=opts.restart,
+        )
+
+        if not opts.dry_run:
+            apply_answer_to_app(command, project)
 
 
 if __name__ == "__main__":
