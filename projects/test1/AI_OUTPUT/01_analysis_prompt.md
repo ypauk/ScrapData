@@ -58,11 +58,7 @@ Everything required from the Google Sheet that is relevant to the scraper output
   "Description ": "Polar GE579: Zwarte 30 liter minibar koelkast voor de hotelkamer\nDe Polar GE579 is een zwarte minibar koelkast met een capaciteit van 29 liter. Deze koelkast maakt gebruik van het absorptie\nkoelsysteem i.p.v. een compressor. Voordeel van dit systeem, door geen bewegende delen is het apparaat uitermate geschikt voor\ntoepassingen in hotelkamers, B&B 's en vergaderzalen.\n\nUitvoering:\n\nExterieur: zwaart\nInterieur: roestvrijstaal\nWerking: Werkt met warmtepomp in plaats van ventilatoren\nVerwisselbare en afsluitbare deur\nVerlichting: LED\nRoosters (2x)\nVrijwel geruisloos\nVrijstaand of inbouw\nAbsorptie koelsysteem\nAutomatische ontdooiing\nSpecificaties:\n\nArtikelnummer: GE579\nInhoud: 29 liter\nTemperatuurbereik:  3-5°C bij een omgevingstemperatuur van 16°C\nTemperatuurbereik: 5-8°C bij een omgevingstemperatuur van 25°C\nTemperatuurbereik: 8-12°C bij een omgevingstemperatuur van 32°C\nAfmetingen BxDxH: 400 x 430 x 530 mm\nEnergieklasse: F\nAansluitwaarde: 220-240 Volt, 60 watt\nKlimaatklasse: N (omgevingstemperatuur tussen +16°C en +32°)\nKoelmiddel: R600a\nGewicht: 13 kg\nBij het absorptiesysteem, dat geheel zonder bewegende delen kan worden uitgevoerd, wordt gebruik gemaakt van het verschijnsel dat sommige vloeistoffen (bijvoorbeeld water) sommige koelmiddelen (bijvoorbeeld ammoniak) bij lage temperatuur absorberen en bij hogere weer afgeven. De in het vrieslichaam ontstane damp van het koelmiddel wordt door de absorberende vloeistof opgenomen in een absorptievat, waar de aanvankelijk verdunde oplossing tot een geconcentreerde wordt verdicht. Deze laatste oplossing komt in een ruimte waar het koelmiddel door een gasvlam of een andere dan gasvormige warmtebron uit de vloeistof wordt verdreven. Het koelmiddel wordt vervolgens in een condensor gekoeld en gecondenseerd en treedt daarna in het vrieslichaam, waarmee de kringloop gesloten is. Voordeel van dit systeem, door geen bewegende delen is het apparaat uitermate geschikt voor toepassingen in hotelkamers en vergaderzalen.\n\nGebruikertips:\nDe kast kan de temperatuur bij normaal gebruik ca. 15 graden terug koelen.\nMen moet zich bij inbouw aan de inbouwvoorschriften houden.\nAls dit niet gebeurd en de kast draait in zijn eigen warmte, dan kan deze niet naar behoren functioneren.",
   "Specs": "https:\/\/www.awesomescreenshot.com\/image\/62286448?key=8b032d4304d185282fd860cfb3c858bb each own colom",
   "Spec_detail": "evertything before the : is the header "
- },
- {
-  "Breadcrumb": "Koelkasten&Kisten"
  }
-
 
 --- ФАЙЛ: answers.txt ---
 
@@ -75,74 +71,22 @@ Everything required from the Google Sheet that is relevant to the scraper output
 
 --- ФАЙЛ: checkpoint.json ---
 {
-  "run_id": "run_20260811_152654",
+  "run_id": "run_20260813_053013",
   "status": "completed",
-  "current_page": 12,
+  "current_page": 1,
   "current_url": null,
-  "processed_count": 429,
-  "exported_count": 429,
-  "timestamp": "2026-08-11T12:27:02.144976+00:00",
+  "processed_count": 49,
+  "exported_count": 0,
+  "timestamp": "2026-08-13T02:30:14.073491+00:00",
   "extra_metadata": {
-    "total_pages": 12,
-    "processed_count": 429,
-    "exported_count": 429
+    "total_pages": 1,
+    "processed_count": 49,
+    "exported_count": 49
   }
 }
 
 --- ФАЙЛ: cookies.json ---
 [
-  {
-    "name": "_gcl_au",
-    "value": "1.1.1365411882.1786435292",
-    "domain": ".professionele-koeling.nl",
-    "path": "/",
-    "expires": 1794211292,
-    "httpOnly": false,
-    "secure": false,
-    "sameSite": "Lax"
-  },
-  {
-    "name": "_ga",
-    "value": "GA1.1.1255001230.1786435293",
-    "domain": ".professionele-koeling.nl",
-    "path": "/",
-    "expires": 1821011213.678069,
-    "httpOnly": false,
-    "secure": false,
-    "sameSite": "Lax"
-  },
-  {
-    "name": "frontend",
-    "value": "u2g21sufdr9pv6kkecgqpcce73",
-    "domain": ".www.professionele-koeling.nl",
-    "path": "/",
-    "expires": 1786454813.087062,
-    "httpOnly": true,
-    "secure": false,
-    "sameSite": "Lax"
-  },
-  {
-    "name": "frontend_cid",
-    "value": "8H62gWeA6I6pbTqx",
-    "domain": ".www.professionele-koeling.nl",
-    "path": "/",
-    "expires": 1786454813.08629,
-    "httpOnly": true,
-    "secure": true,
-    "sameSite": "Lax"
-  },
-  {
-    "name": "cf_clearance",
-    "value": "vZo6dSsLrZ8MS9kNF0MwdB._Ov7TjTh0j2sjNfIrKsM-1786451127-1.2.1.1-E0Zp5oKbK6cmjL8EzrUTKapj4UuuHHpwSzJQh_qYVz1ftWC5l2Hdcyud5_GcSPtX4T2kWgIK1glfZn.bi6pxdTIaKLdmnHeNomgLZc1LLYPlfbJn5LvTXaX98eWuvEJ3xA1p5XHl2AtqkVIci3w.mK1P6hq1WEwopHXdjX_ryIx1iRvR2LFluf_KxxL8X9svj6H5eMkKieghj6NHyF.T8OOsRXSiCo3BgpONrp8as6k1wuYD8l7J06ZaEc971m5Etfju.Pxl7xncRZj5q_qmCWI8Cf6f0Ke6YOtL13b7jri0Z36QJcb9_Fq9HD8VHReBRlsH3uavQ9p8f5aeOMbrNwhbBoi2uA7fTFg5qJSVY5o",
-    "domain": ".professionele-koeling.nl",
-    "path": "/",
-    "expires": 1817987165.083069,
-    "httpOnly": true,
-    "secure": true,
-    "sameSite": "None",
-    "partitionKey": "https://professionele-koeling.nl",
-    "_crHasCrossSiteAncestor": false
-  },
   {
     "name": "IDE",
     "value": "AHWqTUkGXT_lYsWHDGRgB8smCsDlVHW2fgC8Xq9PSGudosZbHGO9wrmuJfcJ68Ku",
@@ -154,13 +98,63 @@ Everything required from the Google Sheet that is relevant to the scraper output
     "sameSite": "None"
   },
   {
-    "name": "_ga_3X7F7CBMN7",
-    "value": "GS2.1.s1786451165$o2$g1$t1786451213$j12$l0$h0",
+    "name": "_ga",
+    "value": "GA1.1.1255001230.1786435293",
     "domain": ".professionele-koeling.nl",
     "path": "/",
-    "expires": 1821011213.67736,
+    "expires": 1821198971.799038,
     "httpOnly": false,
     "secure": false,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "_gcl_au",
+    "value": "1.1.1365411882.1786435292",
+    "domain": ".professionele-koeling.nl",
+    "path": "/",
+    "expires": 1794211292,
+    "httpOnly": false,
+    "secure": false,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "cf_clearance",
+    "value": "Lio7gAuTnro0VUsn510AU9wwTNd8HP4uPIoaSW3iqcw-1786638972-1.2.1.1-pP8lOrnGEfxhJLAUgZmhSnilu78R1B0pLj5ctfMchYjDVf7gfdldmBq_jFoSi1oOkFovY0IP.hZn2LBH8uyKoK9AltZos3Gw4tQ9EczM.j7QE1BLgAsW2tWuJSe395.SAUMWNlZS6Ieg_kpYMnJoI7PYWEBbYLhs6Nqy4AuBHvpflmA4_vEl_5T5w9Im0SUQe_Zm.ZGve.AqyVCPZ8pVO93hK8qBrdhQj272n1XhAcrz2TcGvW6mljvgN2QbfKUK.Wn9KCCiBM681v0Gu0NFctMrpXyhbG9NyHlaDucpWMKnXO7JSuol2AJZQ_SsKQ13VK9w7hvYfqS6mOrNDlPmJWZ3HKhx1F12gPpwkmVVZdA",
+    "domain": ".professionele-koeling.nl",
+    "path": "/",
+    "expires": 1818174972.380038,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "None"
+  },
+  {
+    "name": "_ga_3X7F7CBMN7",
+    "value": "GS2.1.s1786638820$o5$g1$t1786638971$j60$l0$h0",
+    "domain": ".professionele-koeling.nl",
+    "path": "/",
+    "expires": 1821198971.797038,
+    "httpOnly": false,
+    "secure": false,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "frontend",
+    "value": "r2vm916serog03f4a766gn5she",
+    "domain": ".www.professionele-koeling.nl",
+    "path": "/",
+    "expires": 1786642571.290038,
+    "httpOnly": true,
+    "secure": false,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "frontend_cid",
+    "value": "Q4B3fmBXdKCFmkrF",
+    "domain": ".www.professionele-koeling.nl",
+    "path": "/",
+    "expires": 1786642571.290038,
+    "httpOnly": true,
+    "secure": true,
     "sameSite": "Lax"
   }
 ]
@@ -178,7 +172,7 @@ API нет , и сайт на JS
 ВАЖНО: DS-PRK-Scraper.json — это КОРРЕКТНАЯ и ФИНАЛЬНАЯ спецификация. Значения вроде "if multipli seperated by comma" и "evertything before the : is the header" — это инструкции по заполнению полей, а НЕ повреждённые данные. Файл валиден. Используй его как есть. НЕ запрашивай "оригинальную версию" и НЕ считай его повреждённым.
 
 
-Какой итоговый формат нужен:CSV
+Какой итоговый формат нужен: json
 
 Нужно ли собирать весь сайт или только определённые категории? сначала только 2 товара
 Нужно ли скачивать изображения или достаточно URL? надо
