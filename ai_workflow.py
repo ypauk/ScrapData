@@ -23,8 +23,10 @@
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 from typing import Optional
@@ -39,7 +41,7 @@ from datetime import datetime
 AUTO_SEND_DEFAULTS = {
     "max_lines": 400,
     "delay": 2,
-    "timeout": 300,
+    "timeout": 600,
     "retries": 3,
 }
 
@@ -63,6 +65,36 @@ ARCHIVE_DIR = WORKSPACE_ROOT / "archive"
 WORKFLOW_VERSION = "0.2"
 
 OUTPUT_PROMPT = "final_prompt.md"
+
+# ---------------------------------------------------------------------------
+# GitHub Raw URL конфигурация
+# Порядок: env vars → config file → defaults
+# ---------------------------------------------------------------------------
+
+GITHUB_CONFIG_FILE = WORKSPACE_ROOT / ".github_config.json"
+
+def _load_github_config() -> dict:
+    cfg: dict = {}
+    if GITHUB_CONFIG_FILE.exists():
+        try:
+            cfg = json.loads(GITHUB_CONFIG_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    return cfg
+
+def _get_github_setting(key: str, config_key: str, default: str) -> str:
+    """Читает настройку: env var → config file → default."""
+    val = os.environ.get(key, "").strip()
+    if val:
+        return val
+    cfg = _load_github_config()
+    return cfg.get(config_key, default)
+
+GITHUB_OWNER = lambda: _get_github_setting("GITHUB_OWNER", "owner", "ypauk")
+GITHUB_REPO  = lambda: _get_github_setting("GITHUB_REPO",  "repo",  "ScrapData")
+GITHUB_BRANCH = lambda: _get_github_setting("GITHUB_BRANCH", "branch", "main")
+
+PROMPT_FILE_TEMPLATE = "projects/{project}/AI_OUTPUT/03_scraper_prompt.md"
 
 STAGES = {
     "analyze": {"prompt": "01_analysis_prompt.md", "answer": "01_analysis_answer.md"},
@@ -402,23 +434,82 @@ def create_default_ai_output_files(project: Path) -> None:
         write_text(ai_output_dir / filename, "")
 
 
-def apply_answer_to_app(stage: str, project: Path) -> None:
-    """Копирует ответ ИИ (scraper/parser) в app/ если файл не пустой."""
+def extract_python_code(content: str) -> str:
+    """
+    Извлекает Python-код из ответа GPT.
+    Если есть ```python ... ``` блок — берёт содержимое блока.
+    Если блоков нет — ищет начало кода по первой строке с # или import/from/def/class.
+    """
+    # Ищем блоки ```python ... ``` или просто ``` ... ```
+    pattern = r"```(?:python)?\n(.*?)```"
+    matches = re.findall(pattern, content, re.DOTALL)
+    if matches:
+        # Берём самый длинный блок (это и есть основной код)
+        return max(matches, key=len).strip()
+
+    # Блока нет — GPT вернул код без markdown-обёртки (с объяснениями вокруг).
+    # Ищем первую строку, которая выглядит как начало Python-файла.
+    import ast
+    lines = content.splitlines()
+    code_start_re = re.compile(r"^(#!|# |#$|import |from |def |class )")
+    for i, line in enumerate(lines):
+        if code_start_re.match(line):
+            candidate = "\n".join(lines[i:])
+            # Отрезаем "хвост" после последней валидной Python-строки:
+            # ищем последнюю позицию, с которой AST парсится без ошибок.
+            # Простой вариант: обрезаем строки снизу, пока не останется валидный код.
+            chunk_lines = candidate.splitlines()
+            for j in range(len(chunk_lines), 0, -1):
+                try:
+                    ast.parse("\n".join(chunk_lines[:j]))
+                    return "\n".join(chunk_lines[:j]).strip()
+                except SyntaxError:
+                    continue
+            break
+
+    return content
+
+
+def validate_python_syntax(code: str) -> tuple[bool, str]:
+    """Проверяет синтаксис Python. Возвращает (ok, error_message)."""
+    import ast
+    try:
+        ast.parse(code)
+        return True, ""
+    except SyntaxError as e:
+        return False, str(e)
+
+
+def apply_answer_to_app(stage: str, project: Path) -> bool:
+    """Копирует ответ ИИ (scraper/parser) в app/ если файл не пустой и синтаксически валиден.
+    Возвращает True при успехе, False при ошибке."""
     if stage not in MODULE_FILES:
-        return
+        return True
 
     answer_file = project / "AI_OUTPUT" / STAGES[stage]["answer"]
     target_file = project / MODULE_FILES[stage]
 
     if not answer_file.exists():
-        return
+        return True
 
-    content = answer_file.read_text(encoding="utf-8").strip()
-    if not content:
-        return
+    raw_content = answer_file.read_text(encoding="utf-8").strip()
+    if not raw_content:
+        return True
 
-    write_text(target_file, content)
+    # Извлекаем Python-код из ответа (на случай если GPT добавил текст вокруг кода)
+    code = extract_python_code(raw_content)
+
+    # Проверяем синтаксис перед записью
+    syntax_ok, syntax_error = validate_python_syntax(code)
+    if not syntax_ok:
+        print(f"[WARNING] Синтаксическая ошибка в ответе ИИ для '{stage}': {syntax_error}")
+        print(f"          Файл {target_file.name} НЕ обновлён.")
+        print(f"          Проверь ответ вручную: {answer_file}")
+        return False
+
+    write_text(target_file, code)
     ok(f"Скопировано: {STAGES[stage]['answer']} → {MODULE_FILES[stage]}")
+    return True
 
 
 def next_step_hint(stage: str, project: Path) -> None:
@@ -431,6 +522,251 @@ def next_step_hint(stage: str, project: Path) -> None:
     print(f"1. Открой: {prompt_file}")
     print(f"2. Отправь в ChatGPT")
     print(f"3. Сохрани ответ в: {answer_file}")
+
+
+# ---------------------------------------------------------------------------
+# GitHub Raw URL workflow
+# ---------------------------------------------------------------------------
+
+def build_raw_url(owner: str, repo: str, branch: str, file_path: str) -> str:
+    path = file_path.replace("\\", "/").lstrip("/")
+    return f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}"
+
+
+def _run_git(args: list[str], cwd: Path) -> subprocess.CompletedProcess:
+    result = subprocess.run(
+        ["git"] + args,
+        cwd=str(cwd),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    return result
+
+
+def publish_prompt_to_github(prompt_path: Path, project_name: str) -> str:
+    """
+    Выполняет git add/commit/push для prompt_path, проверяет remote и возвращает Raw URL.
+    Если файл не изменился — пропускает commit/push, возвращает URL текущего HEAD.
+    """
+    repo_root = WORKSPACE_ROOT
+    rel_path = prompt_path.relative_to(repo_root).as_posix()
+    owner = GITHUB_OWNER()
+    repo = GITHUB_REPO()
+    branch = GITHUB_BRANCH()
+
+    # --- git status: проверяем, изменён ли файл ---
+    print(f"[Git] Checking changes for {rel_path}...")
+    status_result = _run_git(["status", "--porcelain", rel_path], repo_root)
+    if status_result.returncode != 0:
+        raise RuntimeError(f"[Git] git status failed: {status_result.stderr.strip()}")
+
+    changed = bool(status_result.stdout.strip())
+
+    if changed:
+        # --- git add ---
+        print(f"[Git] Changes detected. Staging {rel_path}...")
+        add_result = _run_git(["add", rel_path], repo_root)
+        if add_result.returncode != 0:
+            raise RuntimeError(f"[Git] git add failed: {add_result.stderr.strip()}")
+
+        # --- git commit ---
+        commit_msg = f"ai: update prompt for {project_name}"
+        print(f"[Git] Committing: {commit_msg}")
+        commit_result = _run_git(["commit", "-m", commit_msg], repo_root)
+        if commit_result.returncode != 0:
+            err = commit_result.stderr.strip()
+            if "Please tell me who you are" in err or "unable to auto-detect email" in err:
+                raise RuntimeError(
+                    "[Git] git commit failed: Git user не настроен.\n"
+                    "  Выполни один раз:\n"
+                    '    git config --global user.email "your@email.com"\n'
+                    '    git config --global user.name "Your Name"'
+                )
+            raise RuntimeError(f"[Git] git commit failed: {err}")
+
+        commit_sha = commit_result.stdout.strip().split("\n")[0]
+        print(f"[Git] Commit: {commit_sha}")
+
+        # --- git push ---
+        print(f"[Git] Pushing to origin/{branch}...")
+        push_result = _run_git(["push", "origin", branch], repo_root)
+        if push_result.returncode != 0:
+            raise RuntimeError(
+                f"[Git] git push failed: {push_result.stderr.strip()}\n"
+                f"  Убедись что Git credentials настроены (gh auth, credential manager или SSH)."
+            )
+        print(f"[Git] Push successful.")
+    else:
+        print(f"[Git] Prompt unchanged. No commit required.")
+
+    # --- Получить текущий локальный SHA ---
+    head_result = _run_git(["rev-parse", "HEAD"], repo_root)
+    if head_result.returncode != 0:
+        raise RuntimeError(f"[Git] rev-parse HEAD failed: {head_result.stderr.strip()}")
+    local_sha = head_result.stdout.strip()
+
+    # --- Проверить remote ---
+    print(f"[Git] Verifying remote...")
+    remote_result = _run_git(["ls-remote", "origin", branch], repo_root)
+    if remote_result.returncode != 0:
+        raise RuntimeError(f"[Git] ls-remote failed: {remote_result.stderr.strip()}")
+
+    remote_sha = remote_result.stdout.strip().split("\t")[0] if remote_result.stdout.strip() else ""
+    if remote_sha != local_sha:
+        raise RuntimeError(
+            f"[Git] Remote SHA mismatch after push!\n"
+            f"  local:  {local_sha}\n"
+            f"  remote: {remote_sha}\n"
+            f"  Файл может быть не опубликован в GitHub."
+        )
+    print(f"[Git] Remote verified. SHA: {local_sha[:8]}")
+
+    raw_url = build_raw_url(owner, repo, branch, rel_path)
+    print(f"[AI] Raw URL: {raw_url}")
+
+    # --- Итоговый вывод ---
+    print()
+    print("=" * 60)
+    print("  AI PROMPT PUBLISHED")
+    print()
+    print(f"  File:")
+    print(f"  {rel_path}")
+    print()
+    print(f"  GitHub:")
+    print(f"  https://github.com/{owner}/{repo}")
+    print()
+    print(f"  Raw URL:")
+    print(f"  {raw_url}")
+    print()
+    print(f"  Commit:")
+    print(f"  {local_sha}")
+    print()
+    if changed:
+        print("  Status: SUCCESS")
+    else:
+        print("  Status: SUCCESS (no changes, existing commit used)")
+    print("=" * 60)
+
+    return raw_url
+
+
+def auto_send_via_url(raw_url: str, answer_path: Path,
+                      timeout: int, retries: int, no_interact: bool = False) -> None:
+    """
+    Отправляет ОДНО короткое сообщение с Raw URL в ChatGPT через браузер.
+    Ответ сохраняется в answer_path.
+    """
+    from prompt_splitter import (
+        check_playwright_available, launch_browser, open_chatgpt,
+        send_message, wait_for_response_complete, get_last_response,
+        BROWSER_PROFILE_DIR, WORKSPACE_ROOT as PS_WORKSPACE,
+    )
+
+    message = (
+        f"Прочитай полный prompt по этой ссылке и выполни задачу:\n{raw_url}"
+    )
+
+    print(f"\n{'=' * 60}")
+    print(f"  ChatGPT Auto Sender (Raw URL mode)")
+    print(f"{'=' * 60}")
+    print(f"\n  URL: {raw_url}")
+    print(f"  Answer: {answer_path.name}")
+    print(f"\n  Browser: Chromium")
+    print(f"  Profile: {BROWSER_PROFILE_DIR.relative_to(PS_WORKSPACE)}")
+    print()
+
+    if not check_playwright_available():
+        die(
+            "Playwright не установлен.\n"
+            "  Установка:\n"
+            "    pip install playwright\n"
+            "    playwright install chromium"
+        )
+
+    print("  Запуск браузера...")
+    pw, context, page = launch_browser()
+
+    try:
+        print("  Открываю ChatGPT...")
+        open_chatgpt(page)
+
+        print(f"\n{'=' * 60}")
+        print("  ChatGPT готов.")
+        if no_interact:
+            import time as _time
+            print("  Автоматический режим — старт через 3 сек...")
+            _time.sleep(3)
+        else:
+            print("  Открой нужный чат или создай новый.")
+            input("  Нажми Enter для начала отправки...")
+        print(f"{'=' * 60}\n")
+
+        print("  Sending Raw URL message...")
+        prev_response = get_last_response(page)
+
+        try:
+            send_message(page, message, retries=retries)
+        except RuntimeError as e:
+            raise RuntimeError(f"Не удалось отправить сообщение: {e}")
+
+        print("  Waiting for response...")
+        wait_for_response_complete(page, timeout=timeout, prev_response=prev_response)
+        print("  Response completed ✓")
+
+        final_response = get_last_response(page)
+        if final_response:
+            if str(answer_path).endswith(".py"):
+                code = extract_python_code(final_response)
+                syntax_ok, _ = validate_python_syntax(code)
+                if not syntax_ok:
+                    print(f"  ⚠ WARNING: Ответ GPT не содержит валидный Python-код!")
+                    if no_interact:
+                        retry_messages = [
+                            "Весь контекст получен. ТЕПЕРЬ выполни задачу — напиши полный Python код. Ответь ТОЛЬКО кодом в блоке ```python ... ```",
+                            "Пожалуйста, напиши код сейчас. Ответь ТОЛЬКО Python кодом в блоке ```python ... ``` без пояснений.",
+                        ]
+                        for attempt, retry_msg in enumerate(retry_messages, 1):
+                            print(f"  Автоматический режим — повторный запрос ({attempt}/{len(retry_messages)})...")
+                            try:
+                                _prev = get_last_response(page)
+                                send_message(page, retry_msg, retries=retries)
+                                wait_for_response_complete(page, timeout=timeout, prev_response=_prev)
+                                final_response = get_last_response(page)
+                                code = extract_python_code(final_response)
+                                syntax_ok, _ = validate_python_syntax(code)
+                                if syntax_ok:
+                                    print(f"  ✓ Повторный запрос сработал, код получен.")
+                                    break
+                                else:
+                                    print(f"  ⚠ Повторный запрос ({attempt}) — ответ всё ещё не код.")
+                            except Exception as _err:
+                                print(f"  [ERROR] Ошибка при повторном запросе: {_err}")
+                        else:
+                            print("  Все повторные запросы не дали кода.")
+                            print(f"  Скопируй код вручную из ChatGPT в: {answer_path}")
+                            return
+
+            answer_path.parent.mkdir(parents=True, exist_ok=True)
+            answer_path.write_text(final_response, encoding="utf-8")
+            print(f"  ✓ Ответ сохранён: {answer_path}")
+        else:
+            print("  ✗ Не удалось получить текст ответа.")
+            print("    Скопируй ответ вручную из окна ChatGPT.")
+
+        print(f"\n{'=' * 60}")
+        print(f"  DONE")
+        print(f"{'=' * 60}")
+
+    except KeyboardInterrupt:
+        print("\n\n  Прервано (Ctrl+C). Браузер оставлен открытым.")
+    finally:
+        try:
+            context.close()
+            pw.stop()
+        except Exception:
+            pass
 
 
 def auto_send_prompt(prompt_path: Path, answer_path: Path, max_lines: int,
@@ -551,6 +887,8 @@ def auto_send_prompt(prompt_path: Path, answer_path: Path, max_lines: int,
             else:
                 print(f"  [{part_num}/{total}] Sending...")
 
+            prev_response = get_last_response(page)
+
             try:
                 send_message(page, parts[i], retries=retries)
             except RuntimeError as e:
@@ -575,13 +913,18 @@ def auto_send_prompt(prompt_path: Path, answer_path: Path, max_lines: int,
 
             print(f"  [{part_num}/{total}] Waiting for response...")
             try:
-                wait_for_response_complete(page, timeout=timeout)
+                wait_for_response_complete(page, timeout=timeout, prev_response=prev_response)
             except TimeoutError as e:
                 print(f"  [ERROR] {e}")
                 if no_interact:
-                    save_state(str(prompt_path), file_hash, total, i)
-                    print("  Автоматический режим — прерываем по таймауту.")
-                    return
+                    print(f"  Автоматический режим — ждём ещё {timeout}с...")
+                    try:
+                        wait_for_response_complete(page, timeout=timeout)
+                    except TimeoutError as e2:
+                        print(f"  [ERROR] {e2}")
+                        save_state(str(prompt_path), file_hash, total, i)
+                        print("  Автоматический режим — прерываем по таймауту.")
+                        return
                 while True:
                     action = input("  [R] Retry wait / [A] Abort: ").strip().upper()
                     if action == "R":
@@ -623,6 +966,46 @@ def auto_send_prompt(prompt_path: Path, answer_path: Path, max_lines: int,
         print("  Сохраняю финальный ответ...")
         final_response = get_last_response(page)
         if final_response:
+            # Для .py файлов — предупреждаем если ответ выглядит как acknowledgement, а не код
+            if str(answer_path).endswith(".py"):
+                code = extract_python_code(final_response)
+                syntax_ok, _ = validate_python_syntax(code)
+                if not syntax_ok:
+                    print(f"  ⚠ WARNING: Ответ GPT не содержит валидный Python-код!")
+                    print(f"  Возможно GPT ответил подтверждением вместо кода.")
+                    print(f"  Ответ (первые 200 символов): {final_response[:200]}")
+                    if no_interact:
+                        # Retry: send explicit trigger to generate code
+                        retry_messages = [
+                            "Весь контекст получен. ТЕПЕРЬ выполни задачу — напиши полный Python код. Ответь ТОЛЬКО кодом в блоке ```python ... ```",
+                            "Пожалуйста, напиши код сейчас. Ответь ТОЛЬКО Python кодом в блоке ```python ... ``` без пояснений.",
+                        ]
+                        for attempt, retry_msg in enumerate(retry_messages, 1):
+                            print(f"  Автоматический режим — повторный запрос ({attempt}/{len(retry_messages)})...")
+                            try:
+                                _prev_before_retry = get_last_response(page)
+                                send_message(page, retry_msg, retries=retries)
+                                wait_for_response_complete(page, timeout=timeout, prev_response=_prev_before_retry)
+                                final_response = get_last_response(page)
+                                code = extract_python_code(final_response)
+                                syntax_ok, _ = validate_python_syntax(code)
+                                if syntax_ok:
+                                    print(f"  ✓ Повторный запрос сработал, код получен.")
+                                    break
+                                else:
+                                    print(f"  ⚠ Повторный запрос ({attempt}) — ответ всё ещё не код.")
+                                    print(f"  Ответ (первые 200 символов): {final_response[:200]}")
+                            except Exception as _retry_err:
+                                print(f"  [ERROR] Ошибка при повторном запросе: {_retry_err}")
+                        else:
+                            print("  Автоматический режим — все повторные запросы не дали кода.")
+                            print(f"  Скопируй код вручную из ChatGPT в: {answer_path}")
+                            return
+                    else:
+                        action = input("  Сохранить всё равно? [y/N] ").strip().lower()
+                        if action not in ("y", "yes", "д", "да"):
+                            print("  Ответ НЕ сохранён. Скопируй код вручную из ChatGPT.")
+                            return
             answer_path.parent.mkdir(parents=True, exist_ok=True)
             answer_path.write_text(final_response, encoding="utf-8")
             print(f"  ✓ Ответ сохранён: {answer_path}")
@@ -1034,8 +1417,10 @@ def cmd_clean(project: Path) -> None:
 def cmd_pipeline(project: Path, opts) -> None:
     """
     Полный конвейер: analyze -> project -> scraper -> parser.
-    Каждый этап генерирует промпт и (при --auto) отправляет в ChatGPT,
-    ожидает ответ, сохраняет — и переходит к следующему.
+
+    В режиме --auto:
+    - Этап 'scraper': генерирует промпт, публикует в GitHub, передаёт Raw URL в ChatGPT.
+    - Остальные этапы: используют прежний chunked auto-send через ChatGPT.
     """
     stages_order = ["analyze", "project", "scraper", "parser"]
 
@@ -1063,23 +1448,30 @@ def cmd_pipeline(project: Path, opts) -> None:
             if not prompt_path.exists():
                 die(f"Промпт не найден: {prompt_path}")
 
-            auto_send_prompt(
-                prompt_path=prompt_path,
-                answer_path=answer_path,
-                max_lines=opts.max_lines,
-                delay=opts.delay,
-                timeout=opts.timeout,
-                retries=opts.retries,
-                dry_run=opts.dry_run,
-                force=opts.force,
-                restart=opts.restart,
-                no_interact=True,
-            )
+            # --- GitHub Raw URL flow для всех этапов ---
+            print(f"\n[AI] Prompt written: {prompt_path}")
+            try:
+                raw_url = publish_prompt_to_github(prompt_path, project.name)
+            except RuntimeError as e:
+                die(str(e))
+            if not opts.dry_run:
+                auto_send_via_url(
+                    raw_url=raw_url,
+                    answer_path=answer_path,
+                    timeout=opts.timeout,
+                    retries=opts.retries,
+                    no_interact=True,
+                )
 
-            if not answer_path.exists() or not answer_path.read_text(encoding="utf-8").strip():
-                die(f"Ответ не получен для этапа '{stage}'. Pipeline остановлен.")
+            if not opts.dry_run:
+                if not answer_path.exists() or not answer_path.read_text(encoding="utf-8").strip():
+                    die(f"Ответ не получен для этапа '{stage}'. Pipeline остановлен.")
 
-            apply_answer_to_app(stage, project)
+            applied = apply_answer_to_app(stage, project)
+            if not applied:
+                die(f"Этап '{stage}': ответ GPT не содержит валидный Python-код. Pipeline остановлен.\n"
+                    f"  Проверь файл вручную: {answer_path}\n"
+                    f"  Скопируй код из ChatGPT и сохрани в этот файл, затем запусти pipeline заново.")
             ok(f"Этап '{stage}' завершён. Ответ сохранён в {answer_path.name}")
         else:
             answer_path = project / "AI_OUTPUT" / STAGES[stage]["answer"]
@@ -1118,6 +1510,32 @@ def cmd_improve(project: Path) -> None:
     cmd_platform(project, "improve")
 
 
+def cmd_login() -> None:
+    """Открывает ChatGPT в браузере для ручного входа. Профиль сохраняется."""
+    from prompt_splitter import launch_browser, BROWSER_PROFILE_DIR, CHATGPT_URL
+
+    print("=" * 60)
+    print("  ChatGPT Login")
+    print("=" * 60)
+    print(f"\n  Профиль: {BROWSER_PROFILE_DIR}")
+    print("  Браузер откроется. Войди в аккаунт ChatGPT вручную.")
+    print("  После входа нажми Enter в этом окне.\n")
+
+    pw, context, page = launch_browser()
+    try:
+        page.goto(CHATGPT_URL, wait_until="domcontentloaded", timeout=60000)
+        input("  Войди в ChatGPT и нажми Enter для сохранения сессии...")
+        context.storage_state()
+    finally:
+        try:
+            context.close()
+            pw.stop()
+        except Exception:
+            pass
+
+    ok("Сессия сохранена. Теперь можно запускать pipeline --auto")
+
+
 
 # ---------------------------------------------------------------------------
 # CLI
@@ -1154,7 +1572,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "command",
-        choices=["new", "analyze", "archive", "project", "scraper", "parser", "debug", "docker", "review", "improve", "clean", "pipeline"],
+        choices=["new", "analyze", "archive", "project", "scraper", "parser", "debug", "docker", "review", "improve", "clean", "pipeline", "login"],
         help="Этап workflow",
     )
 
@@ -1277,6 +1695,10 @@ def main() -> None:
         cmd_new(project_name)  # type: ignore[arg-type]
         return
 
+    if command == "login":
+        cmd_login()
+        return
+
     project = find_project(project_name)
 
     if command == "clean":
@@ -1328,4 +1750,44 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    import io, os
+
+    # Определяем папку лога: projects/<name>/ или рядом со скриптом
+    _log_dir = WORKSPACE_ROOT
+    for _arg in sys.argv[1:]:
+        _candidate = PROJECTS_DIR / _arg
+        if _candidate.is_dir():
+            _log_dir = _candidate
+            break
+
+    _log_path = _log_dir / "log"
+    _log_file = open(_log_path, "w", encoding="utf-8")
+    print(f"[LOG] {_log_path}", file=sys.stderr, flush=True)
+
+    class _Tee:
+        def __init__(self, original, logfile):
+            self._original = original
+            self._logfile = logfile
+        def write(self, s):
+            self._original.write(s)
+            self._original.flush()
+            self._logfile.write(s)
+            self._logfile.flush()
+            return len(s)
+        def flush(self):
+            self._original.flush()
+            self._logfile.flush()
+        def fileno(self):
+            return self._original.fileno()
+
+    _orig_stdout = sys.stdout
+    _orig_stderr = sys.stderr
+    sys.stdout = _Tee(sys.stdout, _log_file)
+    sys.stderr = _Tee(sys.stderr, _log_file)
+
+    try:
+        main()
+    finally:
+        sys.stdout = _orig_stdout
+        sys.stderr = _orig_stderr
+        _log_file.close()

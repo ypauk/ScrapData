@@ -1,14 +1,14 @@
 {
-  "run_id": "run_20260811_152654",
+  "run_id": "run_20260813_053013",
   "status": "completed",
-  "current_page": 12,
+  "current_page": 1,
   "current_url": null,
-  "processed_count": 429,
-  "exported_count": 429,
-  "timestamp": "2026-08-11T12:27:02.144976+00:00",
+  "processed_count": 49,
+  "exported_count": 0,
+  "timestamp": "2026-08-13T02:30:14.073491+00:00",
   "extra_metadata": {
-    "total_pages": 12,
-    "processed_count": 429,
-    "exported_count": 429
+    "total_pages": 1,
+    "processed_count": 49,
+    "exported_count": 49
   }
 }

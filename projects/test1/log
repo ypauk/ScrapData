@@ -1,0 +1,279 @@
+
+============================================================
+  PIPELINE [1/4]: analyze
+============================================================
+
+[OK] Промпт анализа: C:\Users\user\Desktop\ScrapData\projects\test1\AI_OUTPUT\01_analysis_prompt.md
+
+[INFO] Следующий шаг:
+1. Открой: C:\Users\user\Desktop\ScrapData\projects\test1\AI_OUTPUT\01_analysis_prompt.md
+2. Отправь в ChatGPT
+3. Сохрани ответ в: C:\Users\user\Desktop\ScrapData\projects\test1\AI_OUTPUT\01_analysis_answer.md
+
+[AI] Prompt written: C:\Users\user\Desktop\ScrapData\projects\test1\AI_OUTPUT\01_analysis_prompt.md
+[Git] Checking changes for projects/test1/AI_OUTPUT/01_analysis_prompt.md...
+[Git] Changes detected. Staging projects/test1/AI_OUTPUT/01_analysis_prompt.md...
+[Git] Committing: ai: update prompt for test1
+[Git] Commit: [main 680c6ce] ai: update prompt for test1
+[Git] Pushing to origin/main...
+[Git] Push successful.
+[Git] Verifying remote...
+[Git] Remote verified. SHA: 680c6ce7
+[AI] Raw URL: https://raw.githubusercontent.com/ypauk/ScrapData/main/projects/test1/AI_OUTPUT/01_analysis_prompt.md
+
+============================================================
+  AI PROMPT PUBLISHED
+
+  File:
+  projects/test1/AI_OUTPUT/01_analysis_prompt.md
+
+  GitHub:
+  https://github.com/ypauk/ScrapData
+
+  Raw URL:
+  https://raw.githubusercontent.com/ypauk/ScrapData/main/projects/test1/AI_OUTPUT/01_analysis_prompt.md
+
+  Commit:
+  680c6ce734b7296ff43c046e8f09de218d1e2997
+
+  Status: SUCCESS
+============================================================
+
+============================================================
+  ChatGPT Auto Sender (Raw URL mode)
+============================================================
+
+  URL: https://raw.githubusercontent.com/ypauk/ScrapData/main/projects/test1/AI_OUTPUT/01_analysis_prompt.md
+  Answer: 01_analysis_answer.md
+
+  Browser: Chromium
+  Profile: .browser_profile
+
+  Запуск браузера...
+  Открываю ChatGPT...
+
+============================================================
+  ChatGPT готов.
+  Автоматический режим — старт через 3 сек...
+============================================================
+
+  Sending Raw URL message...
+  Waiting for response...
+  Response completed ✓
+  ✓ Ответ сохранён: C:\Users\user\Desktop\ScrapData\projects\test1\AI_OUTPUT\01_analysis_answer.md
+
+============================================================
+  DONE
+============================================================
+[OK] Этап 'analyze' завершён. Ответ сохранён в 01_analysis_answer.md
+
+============================================================
+  PIPELINE [2/4]: project
+============================================================
+
+[OK] Промпт проектирования: C:\Users\user\Desktop\ScrapData\projects\test1\AI_OUTPUT\02_project_prompt.md
+
+[INFO] Следующий шаг:
+1. Открой: C:\Users\user\Desktop\ScrapData\projects\test1\AI_OUTPUT\02_project_prompt.md
+2. Отправь в ChatGPT
+3. Сохрани ответ в: C:\Users\user\Desktop\ScrapData\projects\test1\AI_OUTPUT\02_project_answer.md
+
+[AI] Prompt written: C:\Users\user\Desktop\ScrapData\projects\test1\AI_OUTPUT\02_project_prompt.md
+[Git] Checking changes for projects/test1/AI_OUTPUT/02_project_prompt.md...
+[Git] Changes detected. Staging projects/test1/AI_OUTPUT/02_project_prompt.md...
+[Git] Committing: ai: update prompt for test1
+[Git] Commit: [main db0afda] ai: update prompt for test1
+[Git] Pushing to origin/main...
+[Git] Push successful.
+[Git] Verifying remote...
+[Git] Remote verified. SHA: db0afdaf
+[AI] Raw URL: https://raw.githubusercontent.com/ypauk/ScrapData/main/projects/test1/AI_OUTPUT/02_project_prompt.md
+
+============================================================
+  AI PROMPT PUBLISHED
+
+  File:
+  projects/test1/AI_OUTPUT/02_project_prompt.md
+
+  GitHub:
+  https://github.com/ypauk/ScrapData
+
+  Raw URL:
+  https://raw.githubusercontent.com/ypauk/ScrapData/main/projects/test1/AI_OUTPUT/02_project_prompt.md
+
+  Commit:
+  db0afdafdd1a400e5e32475116446a047ec40c78
+
+  Status: SUCCESS
+============================================================
+
+============================================================
+  ChatGPT Auto Sender (Raw URL mode)
+============================================================
+
+  URL: https://raw.githubusercontent.com/ypauk/ScrapData/main/projects/test1/AI_OUTPUT/02_project_prompt.md
+  Answer: 02_project_answer.md
+
+  Browser: Chromium
+  Profile: .browser_profile
+
+  Запуск браузера...
+  Открываю ChatGPT...
+
+============================================================
+  ChatGPT готов.
+  Автоматический режим — старт через 3 сек...
+============================================================
+
+  Sending Raw URL message...
+  Waiting for response...
+  Response completed ✓
+  ✓ Ответ сохранён: C:\Users\user\Desktop\ScrapData\projects\test1\AI_OUTPUT\02_project_answer.md
+
+============================================================
+  DONE
+============================================================
+[OK] Этап 'project' завершён. Ответ сохранён в 02_project_answer.md
+
+============================================================
+  PIPELINE [3/4]: scraper
+============================================================
+
+[OK] Промпт скрапера: C:\Users\user\Desktop\ScrapData\projects\test1\AI_OUTPUT\03_scraper_prompt.md
+
+1. Отправь в ChatGPT: C:\Users\user\Desktop\ScrapData\projects\test1\AI_OUTPUT\03_scraper_prompt.md
+2. Сохрани ответ (код) в: C:\Users\user\Desktop\ScrapData\projects\test1\AI_OUTPUT\03_scraper_answer.py
+
+[AI] Prompt written: C:\Users\user\Desktop\ScrapData\projects\test1\AI_OUTPUT\03_scraper_prompt.md
+[Git] Checking changes for projects/test1/AI_OUTPUT/03_scraper_prompt.md...
+[Git] Changes detected. Staging projects/test1/AI_OUTPUT/03_scraper_prompt.md...
+[Git] Committing: ai: update prompt for test1
+[Git] Commit: [main e8e1df8] ai: update prompt for test1
+[Git] Pushing to origin/main...
+[Git] Push successful.
+[Git] Verifying remote...
+[Git] Remote verified. SHA: e8e1df8e
+[AI] Raw URL: https://raw.githubusercontent.com/ypauk/ScrapData/main/projects/test1/AI_OUTPUT/03_scraper_prompt.md
+
+============================================================
+  AI PROMPT PUBLISHED
+
+  File:
+  projects/test1/AI_OUTPUT/03_scraper_prompt.md
+
+  GitHub:
+  https://github.com/ypauk/ScrapData
+
+  Raw URL:
+  https://raw.githubusercontent.com/ypauk/ScrapData/main/projects/test1/AI_OUTPUT/03_scraper_prompt.md
+
+  Commit:
+  e8e1df8e72a4201b1351da338072a336c6015738
+
+  Status: SUCCESS
+============================================================
+
+============================================================
+  ChatGPT Auto Sender (Raw URL mode)
+============================================================
+
+  URL: https://raw.githubusercontent.com/ypauk/ScrapData/main/projects/test1/AI_OUTPUT/03_scraper_prompt.md
+  Answer: 03_scraper_answer.py
+
+  Browser: Chromium
+  Profile: .browser_profile
+
+  Запуск браузера...
+  Открываю ChatGPT...
+
+============================================================
+  ChatGPT готов.
+  Автоматический режим — старт через 3 сек...
+============================================================
+
+  Sending Raw URL message...
+  Waiting for response...
+  Response completed ✓
+  ✓ Ответ сохранён: C:\Users\user\Desktop\ScrapData\projects\test1\AI_OUTPUT\03_scraper_answer.py
+
+============================================================
+  DONE
+============================================================
+[OK] Скопировано: 03_scraper_answer.py → app/scraper.py
+[OK] Этап 'scraper' завершён. Ответ сохранён в 03_scraper_answer.py
+
+============================================================
+  PIPELINE [4/4]: parser
+============================================================
+
+[OK] Промпт парсера: C:\Users\user\Desktop\ScrapData\projects\test1\AI_OUTPUT\04_parser_prompt.md
+
+1. Отправь в ChatGPT: C:\Users\user\Desktop\ScrapData\projects\test1\AI_OUTPUT\04_parser_prompt.md
+2. Сохрани ответ (код) в: C:\Users\user\Desktop\ScrapData\projects\test1\AI_OUTPUT\04_parser_answer.py
+
+[AI] Prompt written: C:\Users\user\Desktop\ScrapData\projects\test1\AI_OUTPUT\04_parser_prompt.md
+[Git] Checking changes for projects/test1/AI_OUTPUT/04_parser_prompt.md...
+[Git] Changes detected. Staging projects/test1/AI_OUTPUT/04_parser_prompt.md...
+[Git] Committing: ai: update prompt for test1
+[Git] Commit: [main 6a5aa85] ai: update prompt for test1
+[Git] Pushing to origin/main...
+[Git] Push successful.
+[Git] Verifying remote...
+[Git] Remote verified. SHA: 6a5aa857
+[AI] Raw URL: https://raw.githubusercontent.com/ypauk/ScrapData/main/projects/test1/AI_OUTPUT/04_parser_prompt.md
+
+============================================================
+  AI PROMPT PUBLISHED
+
+  File:
+  projects/test1/AI_OUTPUT/04_parser_prompt.md
+
+  GitHub:
+  https://github.com/ypauk/ScrapData
+
+  Raw URL:
+  https://raw.githubusercontent.com/ypauk/ScrapData/main/projects/test1/AI_OUTPUT/04_parser_prompt.md
+
+  Commit:
+  6a5aa8579148b6dea1c618f913647a39a4b7adcd
+
+  Status: SUCCESS
+============================================================
+
+============================================================
+  ChatGPT Auto Sender (Raw URL mode)
+============================================================
+
+  URL: https://raw.githubusercontent.com/ypauk/ScrapData/main/projects/test1/AI_OUTPUT/04_parser_prompt.md
+  Answer: 04_parser_answer.py
+
+  Browser: Chromium
+  Profile: .browser_profile
+
+  Запуск браузера...
+  Открываю ChatGPT...
+
+============================================================
+  ChatGPT готов.
+  Автоматический режим — старт через 3 сек...
+============================================================
+
+  Sending Raw URL message...
+  Waiting for response...
+  Response completed ✓
+  ⚠ WARNING: Ответ GPT не содержит валидный Python-код!
+  Автоматический режим — повторный запрос (1/2)...
+  ✓ Повторный запрос сработал, код получен.
+  ✓ Ответ сохранён: C:\Users\user\Desktop\ScrapData\projects\test1\AI_OUTPUT\04_parser_answer.py
+
+============================================================
+  DONE
+============================================================
+[OK] Скопировано: 04_parser_answer.py → app/parser.py
+[OK] Этап 'parser' завершён. Ответ сохранён в 04_parser_answer.py
+
+============================================================
+  PIPELINE ЗАВЕРШЁН УСПЕШНО
+  Все этапы: analyze -> project -> scraper -> parser
+============================================================
+

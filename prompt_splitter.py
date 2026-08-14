@@ -279,8 +279,14 @@ def launch_browser():
     context = pw.chromium.launch_persistent_context(
         user_data_dir=str(BROWSER_PROFILE_DIR),
         headless=False,
-        args=["--disable-blink-features=AutomationControlled"],
+        args=[
+            "--disable-blink-features=AutomationControlled",
+            "--no-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-gpu",
+        ],
         viewport={"width": 1280, "height": 900},
+        ignore_default_args=["--enable-automation"],
     )
     page = context.pages[0] if context.pages else context.new_page()
     return pw, context, page
@@ -391,44 +397,71 @@ def _click_send_button(page) -> bool:
     return False
 
 
-def wait_for_response_complete(page, timeout: int = DEFAULT_RESPONSE_TIMEOUT) -> None:
+def _is_stop_button_visible(page) -> bool:
+    """Returns True if ChatGPT is currently generating a response (stop button visible)."""
+    try:
+        for selector in [
+            'button[data-testid="stop-button"]',
+            'button[aria-label="Stop generating"]',
+            'button[aria-label="Остановить генерацию"]',
+        ]:
+            try:
+                if page.locator(selector).first.is_visible(timeout=300):
+                    return True
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return False
+
+
+def wait_for_response_complete(page, timeout: int = DEFAULT_RESPONSE_TIMEOUT,
+                               prev_response: str = "") -> None:
     """
     Ждёт завершения генерации ответа ChatGPT.
-    Определяет по исчезновению кнопки Stop / появлению кнопки Send.
+    Стратегия: ждём START (stop-кнопка появилась ИЛИ текст изменился),
+    затем ждём STOP (stop-кнопка исчезла И текст стабилен 3 сек).
+    Пустой ответ из DOM (транзиентный рендер) игнорируется — не сбрасывает счётчик.
     """
     deadline = time.time() + timeout
 
-    # Ждём начала генерации (появление Stop или streaming)
-    page.wait_for_timeout(2000)
+    # Даём ChatGPT время начать генерацию
+    page.wait_for_timeout(3000)
 
-    stop_selectors = [
-        'button[aria-label="Stop generating"]',
-        'button[aria-label="Остановить генерацию"]',
-        'button[data-testid="stop-button"]',
-        'button[class*="stop"]',
-    ]
+    stable_seconds = 0
+    required_stable = 3  # секунд без изменений = готово
+    current_text = ""
+    new_response_started = False
 
-    # Ждём исчезновения Stop generating
     while time.time() < deadline:
-        stop_visible = False
-        for selector in stop_selectors:
-            try:
-                btn = page.locator(selector).first
-                if btn.is_visible(timeout=500):
-                    stop_visible = True
-                    break
-            except Exception:
-                continue
+        latest = get_last_response(page)
+        generating = _is_stop_button_visible(page)
 
-        if not stop_visible:
-            # Проверяем что composer снова доступен (ответ завершён)
-            try:
-                composer = find_chat_input(page, timeout=3000)
-                if composer.is_visible():
-                    page.wait_for_timeout(1000)
-                    return
-            except Exception:
-                pass
+        # Ждём пока начнётся новый ответ
+        if not new_response_started:
+            if generating or (latest and latest != prev_response):
+                new_response_started = True
+                current_text = latest or prev_response
+                stable_seconds = 0
+            page.wait_for_timeout(1000)
+            continue
+
+        # Ответ начался — ждём завершения
+        if generating:
+            # Всё ещё генерирует — сбрасываем счётчик стабильности
+            stable_seconds = 0
+            if latest:
+                current_text = latest
+        elif latest and latest != current_text:
+            # Не генерирует, но текст ещё менялся
+            stable_seconds = 0
+            current_text = latest
+        elif latest:
+            # Не генерирует, текст не менялся — считаем стабильные секунды
+            stable_seconds += 1
+            if stable_seconds >= required_stable:
+                return
+        # Если latest пустой — DOM в промежуточном состоянии, не сбрасываем счётчик
 
         page.wait_for_timeout(1000)
 
@@ -436,24 +469,35 @@ def wait_for_response_complete(page, timeout: int = DEFAULT_RESPONSE_TIMEOUT) ->
 
 
 def get_last_response(page) -> str:
-    """Получает текст последнего ответа ChatGPT."""
+    """Получает текст последнего ответа ChatGPT через JavaScript."""
     try:
-        # ChatGPT messages are in article or div[data-message-author-role]
-        selectors = [
-            'div[data-message-author-role="assistant"]',
-            'article div.markdown',
-            'div.agent-turn div.markdown',
-            '[data-testid="conversation-turn"] div.markdown',
-        ]
-        for selector in selectors:
-            elements = page.locator(selector)
-            count = elements.count()
-            if count > 0:
-                last = elements.nth(count - 1)
-                text = last.inner_text(timeout=5000)
-                if text.strip():
-                    return text.strip()
-        return ""
+        text = page.evaluate("""() => {
+            // Ищем верхнеуровневые контейнеры ответов ассистента
+            // (фильтруем вложенные — они дают неправильный nth(count-1))
+            const all = Array.from(document.querySelectorAll('[data-message-author-role="assistant"]'));
+            const topLevel = all.filter(el => !el.parentElement.closest('[data-message-author-role="assistant"]'));
+            for (let i = topLevel.length - 1; i >= 0; i--) {
+                const t = (topLevel[i].innerText || '').trim();
+                if (t.length > 0) return t;
+            }
+            // Fallback: conversation-turn containers
+            const turns = Array.from(document.querySelectorAll('[data-testid^="conversation-turn-"]'));
+            for (let i = turns.length - 1; i >= 0; i--) {
+                const el = turns[i].querySelector('[data-message-author-role="assistant"]');
+                if (el) {
+                    const t = (el.innerText || '').trim();
+                    if (t.length > 0) return t;
+                }
+            }
+            // Last resort: markdown divs
+            const md = Array.from(document.querySelectorAll('article div.markdown, div.agent-turn div.markdown'));
+            for (let i = md.length - 1; i >= 0; i--) {
+                const t = (md[i].innerText || '').trim();
+                if (t.length > 0) return t;
+            }
+            return '';
+        }""")
+        return (text or "").strip()
     except Exception:
         return ""
 
@@ -638,6 +682,8 @@ def mode_auto(
             else:
                 print(f"  [{part_num}/{total}] Sending...")
 
+            prev_response = get_last_response(page)
+
             try:
                 send_message(page, parts[i], retries=retries)
             except RuntimeError as e:
@@ -662,7 +708,7 @@ def mode_auto(
             # Wait for response
             print(f"  [{part_num}/{total}] Waiting for response...")
             try:
-                wait_for_response_complete(page, timeout=timeout)
+                wait_for_response_complete(page, timeout=timeout, prev_response=prev_response)
             except TimeoutError as e:
                 print(f"  [ERROR] {e}")
                 while True:

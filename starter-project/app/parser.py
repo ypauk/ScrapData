@@ -32,6 +32,14 @@ def parse_single_item(element) -> Dict[str, Any]:
         
     return item_data
 
+def parse_listing(html: str) -> List[Dict[str, Any]]:
+    """
+    Парсит HTML одной страницы. Возвращает список записей (dict на каждый товар).
+    ИИ перепишет эту функцию под конкретный сайт.
+    """
+    return parse_html_data([html])
+
+
 def parse_html_data(raw_contents: List[str]) -> List[Dict[str, Any]]:
     """
     Главная функция парсера. Принимает список сырых HTML-строк (страниц),

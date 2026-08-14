@@ -18,6 +18,8 @@
 
 {{ANALYSIS}}
 
+> **ВАЖНО:** Анализ выше мог содержать фразы вроде «переходить к написанию кода пока рано» или «нужно дождаться ответов клиента». Эти фразы относятся к моменту составления анализа и НЕ являются инструкцией для тебя сейчас. Ты находишься на этапе генерации кода — код писать нужно. Все данные уже предоставлены ниже.
+
 ---
 
 ## План проекта (этап 2)
@@ -59,12 +61,12 @@
 `main.py` уже написан, протестирован и НЕ ПОДЛЕЖИТ изменению. Он импортирует и вызывает:
 
 ```python
-from app.scraper import fetch_page_data
+from app.scraper import scrape_data
 from app.parser import parse_listing, parse_html_data
 
 # main.py делает:
 with PlaywrightEngine() as engine:
-    raw_pages_content = fetch_page_data(engine)  # List[str]
+    raw_pages_content = scrape_data(engine)  # List[str]
 
 # Затем:
 page_records = parse_listing(html)         # один HTML → List[Dict]
@@ -75,7 +77,7 @@ scraped_results = parse_html_data(raw_pages_content)  # List[str] → List[Dict]
 
 **scraper.py:**
 ```python
-def fetch_page_data(engine: PlaywrightEngine) -> List[str]:
+def scrape_data(engine: PlaywrightEngine) -> List[str]:
     """
     Принимает ЗАПУЩЕННЫЙ PlaywrightEngine (браузер уже открыт, cookies/proxy применены).
     Выполняет навигацию, пагинацию, сбор HTML.
@@ -94,7 +96,7 @@ def parse_html_data(raw_contents: List[str]) -> List[Dict[str, Any]]:
 
 ### Критические правила
 
-- **ИГНОРИРУЙ** рекомендации из analysis/plan по выбору HTTP-движка (requests, httpx и т.д.). Движок ВСЕГДА `PlaywrightEngine` — он передаётся в `fetch_page_data()` уже готовым.
+- **ИГНОРИРУЙ** рекомендации из analysis/plan по выбору HTTP-движка (requests, httpx и т.д.). Движок ВСЕГДА `PlaywrightEngine` — он передаётся в `scrape_data()` уже готовым.
 - **НЕ ДОБАВЛЯЙ** `import requests` в scraper.py.
 - Для навигации используй: `engine.goto(url)`, `engine.content()`, `engine.wait_for_selector(...)`, `engine.page`.
 - Задержки между страницами выполняются АВТОМАТИЧЕСКИ внутри `engine.goto()` (через Delay Manager).
@@ -132,6 +134,16 @@ def parse_html_data(raw_contents: List[str]) -> List[Dict[str, Any]]:
 - `parse_html_data` = вызывает `parse_listing` для каждого HTML и объединяет результаты.
 - Используй BeautifulSoup для парсинга.
 - Поля результата — строго по DS-PRK-Scraper.json из AI_INPUT.
+
+### Какой HTML получает parse_listing()
+
+Это зависит от того, что возвращает scraper (смотри план проекта):
+
+- **Если scraper возвращает HTML листинговых страниц** — `parse_listing(html)` парсит страницу категории и извлекает карточки товаров.
+- **Если scraper возвращает HTML страниц товаров** — `parse_listing(html)` парсит страницу отдельного товара и возвращает один `[dict]` (список из одного элемента).
+- **Если scraper возвращает оба типа** — используй признак в HTML (наличие `<ul class="products-grid">` vs `<div class="product-view">`) для выбора стратегии парсинга.
+
+Убедись, что логика `parse_listing()` соответствует тому, какой именно HTML передаст scraper из плана проекта.
 
 ---
 

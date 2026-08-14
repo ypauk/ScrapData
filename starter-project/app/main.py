@@ -11,7 +11,7 @@ from app.config import EXPORT_INCREMENTAL_ENABLED
 
 from app.playwright_engine import PlaywrightEngine, PlaywrightEngineError
 from app.resume_manager import ResumeManager
-from app.scraper import fetch_page_data
+from app.scraper import scrape_data
 from app.parser import parse_listing, parse_html_data
 from app.exporter import save_to_csv, save_to_json, IncrementalCSVWriter, IncrementalJSONWriter, BatchWriter
 from app.utils import log_message
@@ -170,7 +170,7 @@ def main() -> None:
             # 2. Сбор данных (Scraping)
             # Передаем движок в scraper.py для обхода страниц
             try:
-                raw_pages_content = fetch_page_data(engine)
+                raw_pages_content = scrape_data(engine)
             except PlaywrightEngineError as e:
                 print(f"[{__file__}] Критическая ошибка браузера: {e}")
                 sys.exit(1)

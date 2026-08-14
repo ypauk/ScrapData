@@ -18,6 +18,8 @@
 
 {{ANALYSIS}}
 
+> **ВАЖНО:** Анализ выше мог содержать фразы вроде «переходить к написанию кода пока рано» или «нужно дождаться ответов клиента». Эти фразы относятся к моменту составления анализа и НЕ являются инструкцией для тебя сейчас. Ты находишься на этапе генерации кода — код писать нужно. Все данные уже предоставлены ниже.
+
 ---
 
 ## План проекта (этап 2)
@@ -59,12 +61,12 @@
 `main.py` уже написан, протестирован и НЕ ПОДЛЕЖИТ изменению. Он импортирует и вызывает:
 
 ```python
-from app.scraper import fetch_page_data
+from app.scraper import scrape_data
 from app.parser import parse_listing, parse_html_data
 
 # main.py делает:
 with PlaywrightEngine() as engine:
-    raw_pages_content = fetch_page_data(engine)  # List[str]
+    raw_pages_content = scrape_data(engine)  # List[str]
 
 # Затем:
 page_records = parse_listing(html)         # один HTML → List[Dict]
@@ -75,7 +77,7 @@ scraped_results = parse_html_data(raw_pages_content)  # List[str] → List[Dict]
 
 **scraper.py:**
 ```python
-def fetch_page_data(engine: PlaywrightEngine) -> List[str]:
+def scrape_data(engine: PlaywrightEngine) -> List[str]:
     """
     Принимает ЗАПУЩЕННЫЙ PlaywrightEngine (браузер уже открыт, cookies/proxy применены).
     Выполняет навигацию, пагинацию, сбор HTML.
@@ -94,7 +96,7 @@ def parse_html_data(raw_contents: List[str]) -> List[Dict[str, Any]]:
 
 ### Критические правила
 
-- **ИГНОРИРУЙ** рекомендации из analysis/plan по выбору HTTP-движка (requests, httpx и т.д.). Движок ВСЕГДА `PlaywrightEngine` — он передаётся в `fetch_page_data()` уже готовым.
+- **ИГНОРИРУЙ** рекомендации из analysis/plan по выбору HTTP-движка (requests, httpx и т.д.). Движок ВСЕГДА `PlaywrightEngine` — он передаётся в `scrape_data()` уже готовым.
 - **НЕ ДОБАВЛЯЙ** `import requests` в scraper.py.
 - Для навигации используй: `engine.goto(url)`, `engine.content()`, `engine.wait_for_selector(...)`, `engine.page`.
 - Задержки между страницами выполняются АВТОМАТИЧЕСКИ внутри `engine.goto()` (через Delay Manager).
@@ -115,6 +117,7 @@ def parse_html_data(raw_contents: List[str]) -> List[Dict[str, Any]]:
 
 ## Если модуль = scraper
 
+- Главная функция — `scrape_data(engine)`.
 - Принимает `engine: PlaywrightEngine` (уже запущен, cookies/proxy подключены).
 - Использует `engine.goto(url)` для навигации.
 - Использует `engine.content()` для получения HTML после загрузки.
@@ -122,8 +125,40 @@ def parse_html_data(raw_contents: List[str]) -> List[Dict[str, Any]]:
 - Использует `engine.page` для JS (eval, click, scroll).
 - Отвечает **только** за навигацию, пагинацию, скролл, клики.
 - Возвращает `List[str]` — список сырого HTML.
-- НЕ парсит DOM — это задача parser.py.
+- НЕ парсит DOM с целью извлечения бизнес-данных — это задача parser.py.
 - Используй `app.config.BASE_URL` как стартовый URL.
+
+### Как обходить страницы товаров (product pages)
+
+Если по плану нужны данные со страниц отдельных товаров — **scraper.py сам извлекает URL товаров из HTML листинга** (это навигационная логика, не бизнес-парсинг) и добавляет HTML каждой product page в результирующий список.
+
+```python
+def scrape_data(engine) -> List[str]:
+    raw_contents = []
+
+    # 1. Обход листинговых страниц
+    current_url = BASE_URL
+    while current_url:
+        engine.goto(current_url)
+        listing_html = engine.content()
+
+        # 2. Извлечь URL товаров — допустимо в scraper через BeautifulSoup/regex
+        product_urls = _extract_product_urls(listing_html)
+
+        # 3. Зайти на каждую страницу товара
+        for url in product_urls:
+            engine.goto(url)
+            raw_contents.append(engine.content())  # HTML товара → в список
+
+        # 4. Пагинация листинга
+        current_url = _get_next_page_url(listing_html, current_url)
+
+    return raw_contents  # List[str] — HTML страниц товаров
+```
+
+`parse_html_data` в `main.py` затем вызовет `parse_listing()` для каждого из этих HTML. Значит `parse_listing()` должен уметь парсить HTML страницы товара (а не только листинга). Убедись, что логика `parse_listing()` в плане соответствует тому, какой именно HTML будет ему передан.
+
+**Если достаточно листинговых страниц** (все нужные данные есть на странице категории) — добавляй в список HTML листинга, не заходи на product pages.
 
 ## Если модуль = parser
 

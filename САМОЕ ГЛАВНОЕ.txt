@@ -11,3 +11,8 @@
 08. Подготовить Docker
 09. Проверить ещё раз
 10. Сдать клиенту
+
+● Теперь выполни один раз в терминале:
+
+  git config --global user.email "your@email.com"  
+  git config --global user.name "Your Name"

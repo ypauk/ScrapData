@@ -1,57 +1,5 @@
 [
   {
-    "name": "_gcl_au",
-    "value": "1.1.1365411882.1786435292",
-    "domain": ".professionele-koeling.nl",
-    "path": "/",
-    "expires": 1794211292,
-    "httpOnly": false,
-    "secure": false,
-    "sameSite": "Lax"
-  },
-  {
-    "name": "_ga",
-    "value": "GA1.1.1255001230.1786435293",
-    "domain": ".professionele-koeling.nl",
-    "path": "/",
-    "expires": 1821011213.678069,
-    "httpOnly": false,
-    "secure": false,
-    "sameSite": "Lax"
-  },
-  {
-    "name": "frontend",
-    "value": "u2g21sufdr9pv6kkecgqpcce73",
-    "domain": ".www.professionele-koeling.nl",
-    "path": "/",
-    "expires": 1786454813.087062,
-    "httpOnly": true,
-    "secure": false,
-    "sameSite": "Lax"
-  },
-  {
-    "name": "frontend_cid",
-    "value": "8H62gWeA6I6pbTqx",
-    "domain": ".www.professionele-koeling.nl",
-    "path": "/",
-    "expires": 1786454813.08629,
-    "httpOnly": true,
-    "secure": true,
-    "sameSite": "Lax"
-  },
-  {
-    "name": "cf_clearance",
-    "value": "vZo6dSsLrZ8MS9kNF0MwdB._Ov7TjTh0j2sjNfIrKsM-1786451127-1.2.1.1-E0Zp5oKbK6cmjL8EzrUTKapj4UuuHHpwSzJQh_qYVz1ftWC5l2Hdcyud5_GcSPtX4T2kWgIK1glfZn.bi6pxdTIaKLdmnHeNomgLZc1LLYPlfbJn5LvTXaX98eWuvEJ3xA1p5XHl2AtqkVIci3w.mK1P6hq1WEwopHXdjX_ryIx1iRvR2LFluf_KxxL8X9svj6H5eMkKieghj6NHyF.T8OOsRXSiCo3BgpONrp8as6k1wuYD8l7J06ZaEc971m5Etfju.Pxl7xncRZj5q_qmCWI8Cf6f0Ke6YOtL13b7jri0Z36QJcb9_Fq9HD8VHReBRlsH3uavQ9p8f5aeOMbrNwhbBoi2uA7fTFg5qJSVY5o",
-    "domain": ".professionele-koeling.nl",
-    "path": "/",
-    "expires": 1817987165.083069,
-    "httpOnly": true,
-    "secure": true,
-    "sameSite": "None",
-    "partitionKey": "https://professionele-koeling.nl",
-    "_crHasCrossSiteAncestor": false
-  },
-  {
     "name": "IDE",
     "value": "AHWqTUkGXT_lYsWHDGRgB8smCsDlVHW2fgC8Xq9PSGudosZbHGO9wrmuJfcJ68Ku",
     "domain": ".doubleclick.net",
@@ -62,13 +10,63 @@
     "sameSite": "None"
   },
   {
-    "name": "_ga_3X7F7CBMN7",
-    "value": "GS2.1.s1786451165$o2$g1$t1786451213$j12$l0$h0",
+    "name": "_ga",
+    "value": "GA1.1.1255001230.1786435293",
     "domain": ".professionele-koeling.nl",
     "path": "/",
-    "expires": 1821011213.67736,
+    "expires": 1821198971.799038,
     "httpOnly": false,
     "secure": false,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "_gcl_au",
+    "value": "1.1.1365411882.1786435292",
+    "domain": ".professionele-koeling.nl",
+    "path": "/",
+    "expires": 1794211292,
+    "httpOnly": false,
+    "secure": false,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "cf_clearance",
+    "value": "Lio7gAuTnro0VUsn510AU9wwTNd8HP4uPIoaSW3iqcw-1786638972-1.2.1.1-pP8lOrnGEfxhJLAUgZmhSnilu78R1B0pLj5ctfMchYjDVf7gfdldmBq_jFoSi1oOkFovY0IP.hZn2LBH8uyKoK9AltZos3Gw4tQ9EczM.j7QE1BLgAsW2tWuJSe395.SAUMWNlZS6Ieg_kpYMnJoI7PYWEBbYLhs6Nqy4AuBHvpflmA4_vEl_5T5w9Im0SUQe_Zm.ZGve.AqyVCPZ8pVO93hK8qBrdhQj272n1XhAcrz2TcGvW6mljvgN2QbfKUK.Wn9KCCiBM681v0Gu0NFctMrpXyhbG9NyHlaDucpWMKnXO7JSuol2AJZQ_SsKQ13VK9w7hvYfqS6mOrNDlPmJWZ3HKhx1F12gPpwkmVVZdA",
+    "domain": ".professionele-koeling.nl",
+    "path": "/",
+    "expires": 1818174972.380038,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "None"
+  },
+  {
+    "name": "_ga_3X7F7CBMN7",
+    "value": "GS2.1.s1786638820$o5$g1$t1786638971$j60$l0$h0",
+    "domain": ".professionele-koeling.nl",
+    "path": "/",
+    "expires": 1821198971.797038,
+    "httpOnly": false,
+    "secure": false,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "frontend",
+    "value": "r2vm916serog03f4a766gn5she",
+    "domain": ".www.professionele-koeling.nl",
+    "path": "/",
+    "expires": 1786642571.290038,
+    "httpOnly": true,
+    "secure": false,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "frontend_cid",
+    "value": "Q4B3fmBXdKCFmkrF",
+    "domain": ".www.professionele-koeling.nl",
+    "path": "/",
+    "expires": 1786642571.290038,
+    "httpOnly": true,
+    "secure": true,
     "sameSite": "Lax"
   }
 ]

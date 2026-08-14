@@ -48,8 +48,14 @@ exporter.py
 
 ```python
 with PlaywrightEngine() as engine:
-    raw_pages_content = fetch_page_data(engine)
+    raw_pages_content = scrape_data(engine)  # List[str] — список HTML страниц
+
+# Затем main.py напрямую вызывает parser:
+page_records = parse_listing(html)              # один HTML → List[Dict]
+scraped_results = parse_html_data(raw_pages_content)  # List[str] → List[Dict]
 ```
+
+**Контракт неизменяем:** `scrape_data(engine) → List[str]`. Каждый элемент списка — HTML одной страницы (листинг или страница товара). `main.py` вызывает `parser.parse_listing()` / `parse_html_data()` напрямую — scraper.py парсером не является и parser не вызывает.
 
 `scraper.py` ВСЕГДА получает готовый `PlaywrightEngine` (с cookies, proxy, user-agent) и использует его для навигации. НЕ рекомендуй `requests` или `httpx` для scraper.py — это невозможно в данном фреймворке.
 
@@ -133,27 +139,35 @@ URL
 ↓
 [Экспортер: exporter.py → CSV / JSON]
 
-**Пример:**
+**Пример (если нужны только листинговые страницы):**
 
-Клиент запускает main.py
+Клиент запускает main.py → PlaywrightEngine
+↓
+scraper.scrape_data(engine) → [html_page1, html_page2, ...]  (List[str])
+↓
+main.py вызывает parse_html_data([html_page1, ...])
+↓
+parser.py → list[dict]
+↓
+exporter.py → CSV / JSON
 
-main.py инициализирует браузер через browser.py
+**Пример (если нужно заходить на страницы товаров):**
 
-main.py вызывает scraper.fetch_listing()
+Клиент запускает main.py → PlaywrightEngine
+↓
+scraper.scrape_data(engine):
+    1. Открыть листинг → получить HTML листинга
+    2. Внутри scraper из HTML листинга извлечь URL товаров (через BeautifulSoup или regex)
+    3. Зайти на каждую страницу товара → получить HTML
+    4. Вернуть List[str] — все собранные HTML (листинги + страницы товаров, или только страницы товаров)
+↓
+main.py вызывает parse_html_data([html_product1, html_product2, ...])
+↓
+parser.py → list[dict]
+↓
+exporter.py → CSV / JSON
 
-scraper.py загружает страницу со списком товаров через Playwright
-
-scraper.py передает сырой HTML в parser.parse_listing()
-
-parser.py использует BeautifulSoup для извлечения карточек товаров
-
-parser.py вызывает parse_single_item() для каждой карточки
-
-parser.py возвращает список словарей (list[dict]) в scraper.py
-
-scraper.py возвращает список в main.py
-
-main.py передает список в exporter.save_to_csv()
+**Ключевое правило:** если данные нужны со страниц товаров — scraper.py сам извлекает URL товаров из HTML листинга (это навигационная логика, не парсинг бизнес-данных) и обходит product pages. parser.py в scraper.py НЕ импортируется.
 
 ### 2. Проектирование `app/scraper.py` (Сетевой сбор)
 
@@ -161,6 +175,14 @@ main.py передает список в exporter.save_to_csv()
 
 Опиши контракт каждой функции, которую будет содержать `scraper.py`.
 Предложи необходимый набор функций.
+
+**Обязательная главная функция:** `scrape_data(engine) → List[str]` — это зафиксировано в main.py и не может быть изменено.
+
+Если сайт требует заходить на страницы товаров, вспомогательные функции могут быть:
+- `_fetch_listing_html(engine, url) → str` — получить HTML листинга
+- `_fetch_product_html(engine, url) → str` — получить HTML страницы товара
+- `_extract_product_urls(html) → List[str]` — извлечь URL товаров из HTML листинга (навигационная логика, допустима в scraper.py)
+- `_get_next_page_url(html, current_url) → str | None` — определить URL следующей страницы
 
 * **2.2 Алгоритм обхода:- **Опиши логику пагинации:**
    - Будет ли это цикл по номерам страниц (`?page=2`)?

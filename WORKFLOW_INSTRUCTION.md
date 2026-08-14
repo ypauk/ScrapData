@@ -347,6 +347,28 @@ python ai_workflow.py clean amazon_scraper
 
 ---
 
+### ШАГ 11.5. Вход в ChatGPT (login)
+
+Перед первым запуском `--auto` или после удаления `.browser_profile` — нужно залогиниться:
+
+```bash
+python ai_workflow.py login
+```
+
+**Что происходит:**
+- Открывается браузер с ChatGPT
+- Ты вручную входишь в аккаунт
+- Нажимаешь Enter в терминале — сессия сохраняется в `.browser_profile/`
+
+После этого `pipeline --auto` будет работать без повторного входа.
+
+**Когда нужен повторный login:**
+- Первый запуск на новой машине
+- После `rm -rf .browser_profile` (сессия сбрасывается)
+- Если `pipeline --auto` падает с ошибкой `modal-no-auth` или `rate-limit`
+
+---
+
 ### ШАГ 12. Полный конвейер одной командой (pipeline)
 
 Вместо запуска каждого этапа вручную:
@@ -366,13 +388,14 @@ python ai_workflow.py pipeline amazon_scraper
 
 **Типичный цикл тестирования:**
 ```bash
+python ai_workflow.py login              # только при первом запуске или после сброса профиля
 python ai_workflow.py clean test1        # сбросить файлы проекта
 python clear_chat.py --new               # удалить старый чат в ChatGPT, открыть новый
 python ai_workflow.py pipeline test1 --auto  # прогнать заново
 cd projects/test1 && python app/main.py   # проверить результат
 ```
 
-**Или одной строкой:**
+**Или одной строкой (если уже залогинен):**
 ```bash
 python ai_workflow.py clean test1 && python clear_chat.py --new && python ai_workflow.py pipeline test1 --auto
 ```
@@ -463,6 +486,8 @@ def parse_html_data(raw_contents: List[str]) -> List[Dict[str, Any]]:
 
 | Проблема | Причина | Решение |
 |----------|---------|---------|
+| `modal-no-auth` или `rate-limit` в `--auto` | Не залогинен в ChatGPT | `python ai_workflow.py login` |
+| `Connection closed` при запуске браузера | Chromium не скачан или повреждён | `playwright install chromium` |
 | `ModuleNotFoundError: playwright` | Не установлен | `pip install playwright && playwright install chromium` |
 | `TimeoutError` | Страница грузится долго | Увеличь `SCRAPER_TIMEOUT` в env или config.py |
 | Пустой CSV | Парсер не нашёл элементы | Проверь селекторы в parser.py — открой page.html в браузере |
@@ -486,6 +511,101 @@ def parse_html_data(raw_contents: List[str]) -> List[Dict[str, Any]]:
 2. Или в scraper.py игнорировать аргумент `context` и делать свои requests
 
 Рекомендация: для requests-проектов передавай `context=None` и обрабатывай это в scraper.py.
+
+---
+
+## GitHub Raw Prompt Workflow
+
+### Что это
+
+Начиная с этапа `scraper`, режим `pipeline --auto` больше **не дробит промпт на части** и не
+вставляет тысячи строк в ChatGPT. Вместо этого:
+
+```
+generate prompt
+       ↓
+03_scraper_prompt.md
+       ↓
+git status → изменён?
+  ├─ ДА  → git add → git commit → git push
+  └─ НЕТ → пропустить commit/push
+       ↓
+verify remote SHA
+       ↓
+Raw URL
+       ↓
+ChatGPT ← одно короткое сообщение с URL
+```
+
+### Запуск
+
+```bash
+python ai_workflow.py pipeline test1 --auto
+```
+
+Пользователь не делает ничего вручную — всё происходит автоматически.
+
+### Настройка GitHub
+
+Приоритет: **env vars → `.github_config.json` → defaults**
+
+**Вариант 1: environment variables**
+
+```bash
+set GITHUB_OWNER=ypauk
+set GITHUB_REPO=ScrapData
+set GITHUB_BRANCH=main
+```
+
+**Вариант 2: файл `.github_config.json`** (в корне ScrapData)
+
+```json
+{
+  "owner": "ypauk",
+  "repo": "ScrapData",
+  "branch": "main"
+}
+```
+
+Defaults (если ничего не задано): `owner=ypauk`, `repo=ScrapData`, `branch=main`.
+
+### Authentication (Git push)
+
+Используется **уже настроенный Git credential manager** (Windows Credential Manager,
+Git Credential Manager, SSH или `gh auth`). Никакой токен не нужно передавать в команду.
+
+Если push не работает:
+```bash
+gh auth login
+# или: git credential manager — убедись что credentials для github.com сохранены
+```
+
+**НЕ хранить GitHub token в коде, конфигах или `.env`.**
+Если используешь `GITHUB_TOKEN` для API — передавай через env var, не пиши в файл.
+
+### Формат Raw URL
+
+```
+https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}
+```
+
+Пример для `test1`:
+```
+https://raw.githubusercontent.com/ypauk/ScrapData/main/projects/test1/AI_OUTPUT/03_scraper_prompt.md
+```
+
+Путь определяется автоматически из имени проекта — `test1`, `test2`, и т.д. не захардкожены.
+
+### Idempotency
+
+Если промпт не изменился с последнего commit — новый commit **не создаётся**.
+Повторный запуск безопасен.
+
+### Тесты
+
+```bash
+python -m pytest tests/test_github_workflow.py -v
+```
 
 ---
 
