@@ -2461,7 +2461,66 @@ if __name__ == "__main__":
 
 Файл `app/parser.py` — перепиши его полностью под план проекта:
 
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
+
+from typing import Any, Dict, List, Tuple
+from urllib.parse import urljoin, urlparse, unquote
+
+
+from bs4 import BeautifulSoup, Tag
+
+
+try:
+    from app.utils import clean_price
+except ImportError:
+    def clean_price(price_string: str) -> float:
+        if not price_string:
+            return 0.0
+        cleaned = "".join(str(price_string).split())
+        cleaned = "".join(ch for ch in cleaned if ch.isdigit() or ch in ".,")
+        if "," in cleaned and "." in cleaned:
+            if cleaned.find(",") < cleaned.find("."):
+                cleaned = cleaned.replace(",", "")
+            else:
+                cleaned = cleaned.replace(".", "").replace(",", ".")
+        elif "," in cleaned:
+            cleaned = cleaned.replace(",", ".")
+        try:
+            return float(cleaned)
+        except (TypeError, ValueError):
+            return 0.0
+
+
+
+
+OUTPUT_FIELDS = (
+    "URL",
+    "Breadcrumb",
+    "Title ",
+    "Short description",
+    "imageurl",
+    "image_name",
+    "Price",
+    "Sale price",
+    "Description ",
+    "Specs",
+    "Spec_detail",
+)
+
+
+
+
+def _log(level: str, message: str) -> None:
+    print(f"[{__file__}] [{level.upper()}] {message}")
+
+
+
+
+def _clean_text(value: Any, preserve_lines: bool = False) -> str:
+    if value is None:
+        return ""
 
 ---
 
