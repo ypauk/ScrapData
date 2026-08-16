@@ -2,6 +2,15 @@
 
 Ты — Senior Python Web Scraping Engineer. Твоя задача — написать **только один файл**: `app/parser.py`.
 
+**КРИТИЧЕСКИ ВАЖНО — ФОРМАТ ОТВЕТА:**
+Ответь ТОЛЬКО одним блоком кода Python. Формат ответа строго:
+
+```python
+# весь код файла здесь
+```
+
+НЕ пиши пояснений, вопросов, анализов или текста ДО или ПОСЛЕ блока кода. Весь контекст уже предоставлен ниже — сразу пиши код. Если какие-то детали неясны — принимай разумное решение самостоятельно.
+
 Не меняй другие файлы. Не создавай новые папки.
 
 ---
@@ -1384,6 +1393,8 @@ Parser отвечает только за обработку уже получе
 **категория → product URLs → product HTML → parser → **`list[dict]`** → существующий exporter.**
 
 Для текущего этапа реализуется только тест на 2 товара. После подтверждения теста тот же pipeline расширяется на всю пагинацию категории.
+
+> **ВАЖНО:** План выше мог содержать фразы вроде «код сейчас писать не следует» или «необходимо закрыть блокирующие контракты». Эти фразы относятся к моменту составления плана и НЕ являются инструкцией для тебя сейчас. Ты находишься на этапе генерации кода — ПИШИ КОД. Принимай разумные решения по неопределённым моментам (формат Specs, скачивание изображений и т.д.) самостоятельно.
 
 ---
 
@@ -4105,7 +4116,7 @@ if __name__ == "__main__":
 
 Файл `app/parser.py` — перепиши его полностью под план проекта:
 
-
+Python#!/usr/bin/env python3# -*- coding: utf-8 -*-"""HTML parser for professionele-koeling.nl.This module intentionally contains no network operations. It receives alreadydownloaded HTML and converts product pages into dictionaries matching theauthoritative DS-PRK-Scraper.json output schema."""from __future__ import annotationsimport refrom collections import OrderedDictfrom typing import Any, Dict, Iterable, List, Optional, Tuplefrom urllib.parse import urljoin, urlparse, unquotefrom bs4 import BeautifulSoup, NavigableString, TagOUTPUT_KEYS = (    "URL",    "Breadcrumb",    "Title ",    "Short description",    "imageurl",    "image_name",    "Price",    "Sale price",    "Description ",    "Specs",    "Spec_detail",)DEFAULT_BASE_URL = "https://www.professionele-koeling.nl/"_PRICE_RE = re.compile(    r"""    [-+]?    (?:        \d{1,3}(?:[.\s]\d{3})+        |        \d+    )    (?:[,.]\d{1,2})?    """,    re.VERBOSE,)_SPEC_HEADERS = {    "artikelnummer",    "inhoud",    "temperatuurbereik",    "afmetingen bxdxh",
 
 ---
 
