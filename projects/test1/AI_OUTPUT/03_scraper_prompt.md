@@ -4116,7 +4116,7 @@ if __name__ == "__main__":
 
 Файл `app/scraper.py` — перепиши его полностью под план проекта:
 
-
+Python#!/usr/bin/env python3# -*- coding: utf-8 -*-from typing import Any, List, Optionalfrom urllib.parse import urljoin, urlparsefrom bs4 import BeautifulSoupfrom app.config import BASE_URLfrom app.playwright_engine import PlaywrightEngineCATEGORY_URL = "https://www.professionele-koeling.nl/koelkasten-kisten.html"TEST_PRODUCT_LIMIT = 2LISTING_READY_SELECTORS = (    ".products-grid .item",    ".products-grid",    ".item.product",    "li.item",)PRODUCT_READY_SELECTORS = (    ".product-name h1",    ".short-description",    ".price-box",)NEXT_PAGE_SELECTOR = ".toolbar-bottom .pager .pages a.next"_CLOUDFLARE_MARKERS = (    "cf-chl-",    "cf-chl-bypass",    "challenge-platform",    "just a moment",    "checking your browser",    "verify you are human",    "attention required",    "cloudflare",)_CAPTCHA_MARKERS = (    "g-recaptcha",    "grecaptcha",    "hcaptcha",    "h-captcha",    "recaptcha",    "captcha",    "are you a robot",)def _log(level: str, message: str) -> None:
 
 ---
 
